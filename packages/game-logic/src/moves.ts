@@ -127,6 +127,23 @@ export function applyMove(
     to: projected,
   });
 
+  // Win check — if this move completed all 4 tokens, end the game
+  if (isWin({ ...state, tokens: newTokens } as GameState, playerId)) {
+    log.push({ kind: 'won', playerId });
+    return {
+      ...state,
+      tokens: newTokens,
+      dice: null,
+      rolledThisTurn: false,
+      consecutiveSixes: 0,
+      currentTurn: null,
+      status: 'finished',
+      winner: playerId,
+      lastActivityAt: opts.now,
+      log,
+    };
+  }
+
   // Extra turn on a 6 OR on a capture
   const grantsExtra = dice === 6 || captured;
   const next = grantsExtra ? playerId : nextTurn(state);
@@ -142,4 +159,23 @@ export function applyMove(
     lastActivityAt: opts.now,
     log,
   };
+}
+
+export function applyRoll(state: GameState, value: number, opts: { now: number }): GameState {
+  if (state.status !== 'playing') throw new Error(`applyRoll: expected playing status, got ${state.status}`);
+  if (state.rolledThisTurn) throw new Error('applyRoll: already rolled this turn');
+  if (value < 1 || value > 6) throw new Error(`applyRoll: value ${value} out of range (1..6)`);
+  return {
+    ...state,
+    dice: value,
+    rolledThisTurn: true,
+    lastActivityAt: opts.now,
+    log: [...state.log, { kind: 'rolled', playerId: state.currentTurn!, value }],
+  };
+}
+
+export function isWin(state: GameState, playerId: string): boolean {
+  const tokens = state.tokens[playerId];
+  if (!tokens) return false;
+  return tokens.every((t) => t.position.kind === 'path' && t.position.index === FINISH_INDEX);
 }
