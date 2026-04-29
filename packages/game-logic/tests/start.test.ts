@@ -30,4 +30,18 @@ describe('startGame', () => {
     const s0 = { ...createInitialState({ code: 'X', players: mkPlayers(), now: 0 }), players: [] };
     expect(() => startGame(s0 as any, { now: 1 })).toThrow();
   });
+
+  it('orders turn by canonical color order regardless of seating order', () => {
+    // Players seated yellow, red, blue, green — should be reordered red, green, yellow, blue
+    const players: Player[] = [
+      { id: 'y', name: 'Y', avatar: '🐱', color: 'yellow', isBot: false, isHost: true,  connected: true },
+      { id: 'r', name: 'R', avatar: '🦊', color: 'red',    isBot: false, isHost: false, connected: true },
+      { id: 'bl', name: 'B', avatar: '🐼', color: 'blue',  isBot: false, isHost: false, connected: true },
+      { id: 'g', name: 'G', avatar: '🦁', color: 'green',  isBot: false, isHost: false, connected: true },
+    ];
+    const s0 = createInitialState({ code: 'X', players, now: 0 });
+    const s1 = startGame(s0, { now: 1 });
+    expect(s1.turnOrder).toEqual(['r', 'g', 'y', 'bl']);
+    expect(s1.currentTurn).toBe('r');
+  });
 });

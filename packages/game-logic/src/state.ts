@@ -46,7 +46,7 @@ export function createInitialState(input: CreateInitialStateInput): GameState {
 
 export function startGame(state: GameState, opts: { now: number }): GameState {
   if (state.status !== 'lobby') {
-    throw new Error('startGame: not in lobby');
+    throw new Error(`startGame: expected lobby, got ${state.status}`);
   }
   if (state.players.length < 2) {
     throw new Error('startGame: need at least 2 players');

@@ -10,6 +10,10 @@ describe('COLORS', () => {
     expect(new Set(COLORS)).toEqual(new Set(['red', 'green', 'blue', 'yellow']));
   });
 
+  it('is in clockwise board order: red → green → yellow → blue', () => {
+    expect(COLORS).toEqual(['red', 'green', 'yellow', 'blue']);
+  });
+
   it('has no duplicates', () => {
     expect(new Set(COLORS).size).toBe(COLORS.length);
   });

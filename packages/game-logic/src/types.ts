@@ -1,6 +1,6 @@
 export type Color = 'red' | 'green' | 'blue' | 'yellow';
 
-export const COLORS: readonly Color[] = ['red', 'green', 'blue', 'yellow'] as const;
+export const COLORS: readonly Color[] = ['red', 'green', 'yellow', 'blue'] as const;
 
 /**
  * Each player walks a 57-step path:
