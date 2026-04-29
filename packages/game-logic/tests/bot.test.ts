@@ -47,4 +47,16 @@ describe('chooseBotMove', () => {
     s = applyRoll(s, 3, { now: 5 });
     expect(chooseBotMove(s)).toEqual({ kind: 'move', tokenId: 'red-1' });
   });
+
+  it('prefers a capture over leaving home, even when both are available on a 6', () => {
+    let s = fresh();
+    // Set up: red has token at pathIndex 12 (abs 12), green has token at pathIndex 5 (abs 18).
+    // Roll 6: red-0 +6 → pathIndex 18 (abs 18) → captures green-0.
+    //         red-1 stays at home, but rolling 6 makes leaving home (pathIndex 0) legal.
+    // Capture must win.
+    s = setToken(s, 'a', 0, { kind: 'path', index: 12 });
+    s = setToken(s, 'b', 0, { kind: 'path', index: 5 });
+    s = applyRoll(s, 6, { now: 5 });
+    expect(chooseBotMove(s)).toEqual({ kind: 'move', tokenId: 'red-0' });
+  });
 });
