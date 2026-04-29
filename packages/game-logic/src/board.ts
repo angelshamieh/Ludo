@@ -1,9 +1,16 @@
 import type { Color } from './types';
 
+/** Number of squares on the outer ring shared by all players. */
 export const TRACK_LENGTH = 52;
+
+/** Number of squares each player walks on the outer ring before turning into their home column. */
+export const OUTER_PATH_STEPS = TRACK_LENGTH - 1; // 51
+
+/** Number of squares in each player's home column, before the finish square. */
 export const FINAL_RUN_LENGTH = 5;
-/** 51 outer-track squares (0..50), 5 home-column squares (51..55), 1 finish (56). */
-export const PATH_LENGTH = 51 + FINAL_RUN_LENGTH + 1; // 57
+
+/** Total path indices a single token traverses: outer steps (0..50) + home column (51..55) + finish (56). */
+export const PATH_LENGTH = OUTER_PATH_STEPS + FINAL_RUN_LENGTH + 1;
 
 export const START_OFFSET: Record<Color, number> = {
   red: 0,
@@ -15,7 +22,7 @@ export const START_OFFSET: Record<Color, number> = {
 /** Convert (color, pathIndex) on the outer track to absolute board square 0..51. */
 export function trackAbsolute(color: Color, pathIndex: number): number {
   if (pathIndex < 0 || pathIndex > 50) {
-    throw new Error(`pathIndex ${pathIndex} is not on the outer track`);
+    throw new Error(`pathIndex ${pathIndex} out of range; expected 0..${OUTER_PATH_STEPS - 1} (outer track)`);
   }
   return (START_OFFSET[color] + pathIndex) % TRACK_LENGTH;
 }

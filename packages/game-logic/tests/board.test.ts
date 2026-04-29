@@ -29,7 +29,11 @@ describe('board', () => {
     expect(trackAbsolute('blue', 13)).toBe(0);        // 39 + 13 = 52 % 52 = 0
   });
 
-  it('trackAbsolute throws if pathIndex is past the outer track', () => {
-    expect(() => trackAbsolute('red', 51)).toThrow();
+  it('trackAbsolute throws when pathIndex is past the outer track', () => {
+    expect(() => trackAbsolute('red', 51)).toThrow(/outer track/);
+  });
+
+  it('trackAbsolute throws when pathIndex is negative', () => {
+    expect(() => trackAbsolute('red', -1)).toThrow(/outer track/);
   });
 });
