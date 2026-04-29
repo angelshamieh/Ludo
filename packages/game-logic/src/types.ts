@@ -41,7 +41,7 @@ export type GameEvent =
   | { kind: 'won'; playerId: string };
 
 export type GameState = {
-  code: string;
+  code: string;                 // 4-letter room code, e.g. "ABCD"
   status: GameStatus;
   players: Player[];
   turnOrder: string[];          // playerIds in seating order

@@ -213,12 +213,13 @@ The game logic lives in `packages/game-logic` as a pure TypeScript module — no
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "outDir": "./dist"
   },
   "include": ["src/**/*", "tests/**/*"]
 }
 ```
+
+(Note: no `rootDir` here. We're not emitting yet — `main`/`types`/`exports` point at `./src/index.ts` directly. Adding `rootDir: ./src` while `include` covers `tests/**/*` causes a TS6059 error. If/when we add a build step later, split into `tsconfig.build.json` for src-only emit.)
 
 - [ ] **Step 3: Write `packages/game-logic/vitest.config.ts`**
 
