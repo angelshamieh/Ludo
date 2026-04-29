@@ -38,12 +38,23 @@ describe('applyRoll', () => {
     const lobby = createInitialState({ code: 'X', players, now: 0 });
     expect(() => applyRoll(lobby, 4, { now: 5 })).toThrow();
   });
+
+  it('logs the rolled event with playerId and value', () => {
+    const s = applyRoll(fresh(), 4, { now: 5 });
+    const lastEvent = s.log.at(-1);
+    expect(lastEvent).toEqual({ kind: 'rolled', playerId: 'a', value: 4 });
+  });
+
+  it('rejects non-integer dice values', () => {
+    expect(() => applyRoll(fresh(), 1.5, { now: 5 })).toThrow();
+    expect(() => applyRoll(fresh(), Number.NaN, { now: 5 })).toThrow();
+  });
 });
 
 describe('isWin / finishing', () => {
   it('isWin is false when at least one token is not at finish', () => {
     const s = fresh();
-    expect(isWin(s, 'a')).toBe(false);
+    expect(isWin(s.tokens, 'a')).toBe(false);
   });
 
   it('moving the last token to FINISH_INDEX wins the game', () => {
@@ -59,7 +70,32 @@ describe('isWin / finishing', () => {
     expect(s.status).toBe('finished');
     expect(s.winner).toBe('a');
     expect(s.currentTurn).toBeNull();
-    expect(isWin(s, 'a')).toBe(true);
+    expect(isWin(s.tokens, 'a')).toBe(true);
     expect(s.log.some((e) => e.kind === 'won' && e.playerId === 'a')).toBe(true);
+  });
+
+  it('a single token at FINISH_INDEX is not a win', () => {
+    let s = fresh();
+    s = setAllTokens(s, 'a', [
+      { kind: 'path', index: FINISH_INDEX },
+      { kind: 'home' },
+      { kind: 'home' },
+      { kind: 'home' },
+    ]);
+    expect(isWin(s.tokens, 'a')).toBe(false);
+  });
+
+  it('after a win, applyRoll throws', () => {
+    let s = fresh();
+    s = setAllTokens(s, 'a', [
+      { kind: 'path', index: FINISH_INDEX },
+      { kind: 'path', index: FINISH_INDEX },
+      { kind: 'path', index: FINISH_INDEX },
+      { kind: 'path', index: FINISH_INDEX - 3 },
+    ]);
+    s = applyRoll(s, 3, { now: 5 });
+    s = applyMove(s, { kind: 'move', tokenId: 'red-3' }, { now: 6 });
+    // status === 'finished' now
+    expect(() => applyRoll(s, 4, { now: 7 })).toThrow();
   });
 });

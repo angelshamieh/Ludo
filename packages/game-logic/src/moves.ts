@@ -128,7 +128,7 @@ export function applyMove(
   });
 
   // Win check — if this move completed all 4 tokens, end the game
-  if (isWin({ ...state, tokens: newTokens } as GameState, playerId)) {
+  if (isWin(newTokens, playerId)) {
     log.push({ kind: 'won', playerId });
     return {
       ...state,
@@ -164,7 +164,9 @@ export function applyMove(
 export function applyRoll(state: GameState, value: number, opts: { now: number }): GameState {
   if (state.status !== 'playing') throw new Error(`applyRoll: expected playing status, got ${state.status}`);
   if (state.rolledThisTurn) throw new Error('applyRoll: already rolled this turn');
-  if (value < 1 || value > 6) throw new Error(`applyRoll: value ${value} out of range (1..6)`);
+  if (!Number.isInteger(value) || value < 1 || value > 6) {
+    throw new Error(`applyRoll: value ${value} must be an integer in 1..6`);
+  }
   return {
     ...state,
     dice: value,
@@ -174,8 +176,8 @@ export function applyRoll(state: GameState, value: number, opts: { now: number }
   };
 }
 
-export function isWin(state: GameState, playerId: string): boolean {
-  const tokens = state.tokens[playerId];
-  if (!tokens) return false;
-  return tokens.every((t) => t.position.kind === 'path' && t.position.index === FINISH_INDEX);
+export function isWin(tokens: Record<string, Token[]>, playerId: string): boolean {
+  const playerTokens = tokens[playerId];
+  if (!playerTokens) return false;
+  return playerTokens.every((t) => t.position.kind === 'path' && t.position.index === FINISH_INDEX);
 }
