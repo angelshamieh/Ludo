@@ -1,5 +1,5 @@
-import type { GameState, Move, Token, TokenPosition } from './types';
-import { FINISH_INDEX } from './board';
+import type { GameEvent, GameState, Move, Token, TokenPosition } from './types';
+import { FINISH_INDEX, SAFE_ABSOLUTE_SQUARES, trackAbsolute } from './board';
 
 /** Where would the given token end up if moved by `dice` pips? Returns null if the move is illegal. */
 export function projectMove(token: Token, dice: number): TokenPosition | null {
@@ -33,4 +33,109 @@ export function legalMoves(state: GameState, playerId: string): Move[] {
   }
   if (moves.length === 0) return [{ kind: 'pass' }];
   return moves;
+}
+
+const isCapturable = (
+  myColor: Token['color'],
+  myAbs: number,
+  victim: Token,
+): boolean => {
+  if (victim.color === myColor) return false;
+  if (victim.position.kind !== 'path') return false;
+  if (victim.position.index > 50) return false;            // in their home column
+  if (victim.position.index === FINISH_INDEX) return false; // finished (defensive — index 56)
+  // Victim's absolute square:
+  const victimAbs = trackAbsolute(victim.color, victim.position.index);
+  if (victimAbs !== myAbs) return false;
+  if (SAFE_ABSOLUTE_SQUARES.has(myAbs)) return false;
+  return true;
+};
+
+const nextTurn = (state: GameState): string => {
+  const i = state.turnOrder.indexOf(state.currentTurn!);
+  return state.turnOrder[(i + 1) % state.turnOrder.length]!;
+};
+
+export function applyMove(
+  state: GameState,
+  move: Move,
+  opts: { now: number },
+): GameState {
+  if (state.status !== 'playing') throw new Error('applyMove: not playing');
+  if (state.currentTurn == null) throw new Error('applyMove: no current turn');
+  if (state.dice == null || !state.rolledThisTurn) throw new Error('applyMove: must roll first');
+  const playerId = state.currentTurn;
+  const dice = state.dice;
+  const log: GameEvent[] = [...state.log];
+
+  if (move.kind === 'pass') {
+    const next = nextTurn(state);
+    log.push({ kind: 'turn', playerId: next });
+    return {
+      ...state,
+      dice: null,
+      rolledThisTurn: false,
+      consecutiveSixes: 0,
+      currentTurn: next,
+      lastActivityAt: opts.now,
+      log,
+    };
+  }
+
+  // move.kind === 'move'
+  const tokens = state.tokens[playerId]!;
+  const tokenIdx = tokens.findIndex((t) => t.id === move.tokenId);
+  if (tokenIdx < 0) throw new Error(`applyMove: token ${move.tokenId} not owned by ${playerId}`);
+  const token = tokens[tokenIdx]!;
+  const projected = projectMove(token, dice);
+  if (projected == null) throw new Error('applyMove: illegal move');
+
+  const newToken: Token = { ...token, position: projected };
+  const newTokens: Record<string, Token[]> = { ...state.tokens };
+  newTokens[playerId] = tokens.map((t, i) => (i === tokenIdx ? newToken : t));
+
+  let captured = false;
+  if (projected.kind === 'path' && projected.index <= 50) {
+    const myAbs = trackAbsolute(token.color, projected.index);
+    for (const otherId of Object.keys(newTokens)) {
+      if (otherId === playerId) continue;
+      newTokens[otherId] = newTokens[otherId]!.map((victim) => {
+        if (isCapturable(token.color, myAbs, victim)) {
+          captured = true;
+          log.push({
+            kind: 'captured',
+            capturer: playerId,
+            victim: victim.owner,
+            tokenId: victim.id,
+          });
+          return { ...victim, position: { kind: 'home' } };
+        }
+        return victim;
+      });
+    }
+  }
+
+  log.push({
+    kind: 'moved',
+    playerId,
+    tokenId: token.id,
+    from: token.position,
+    to: projected,
+  });
+
+  // Extra turn on a 6 OR on a capture
+  const grantsExtra = dice === 6 || captured;
+  const next = grantsExtra ? playerId : nextTurn(state);
+  if (next !== playerId) log.push({ kind: 'turn', playerId: next });
+
+  return {
+    ...state,
+    tokens: newTokens,
+    dice: null,
+    rolledThisTurn: false,
+    consecutiveSixes: dice === 6 ? state.consecutiveSixes + 1 : 0,
+    currentTurn: next,
+    lastActivityAt: opts.now,
+    log,
+  };
 }
