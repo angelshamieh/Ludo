@@ -27,7 +27,9 @@ export function createInitialState(input: CreateInitialStateInput): GameState {
   return {
     code,
     status: 'lobby',
-    players,
+    // Defensive shallow copy — caller may keep mutating their array (e.g. lobby seat changes)
+    players: [...players],
+    // turnOrder + currentTurn are populated by startGame()
     turnOrder: [],
     currentTurn: null,
     dice: null,

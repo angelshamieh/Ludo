@@ -50,6 +50,21 @@ describe('createInitialState', () => {
     expect(() => createInitialState({ code: 'X', players: [], now: 0 })).toThrow();
   });
 
+  it('rejects 5 or more players', () => {
+    const five: Player[] = [
+      ...players(4),
+      { id: 'p4', name: 'Player 4', avatar: '🐱', color: 'red', isBot: false, isHost: false, connected: true },
+    ];
+    expect(() => createInitialState({ code: 'X', players: five, now: 0 })).toThrow();
+  });
+
+  it('does not retain a reference to the caller players array', () => {
+    const arr = players(2);
+    const s = createInitialState({ code: 'X', players: arr, now: 0 });
+    arr.push({ id: 'pX', name: 'X', avatar: '🐱', color: 'yellow', isBot: false, isHost: false, connected: true });
+    expect(s.players).toHaveLength(2);
+  });
+
   it('rejects duplicate colors', () => {
     const dup = players(2);
     dup[1]!.color = 'red';
