@@ -6,7 +6,7 @@
 
 **Architecture:** pnpm monorepo with three packages: `packages/game-logic` (pure rules engine, shared), `apps/web` (Next.js + React PWA), `apps/server` (Node + ws WebSocket server). Authoritative server, full-state-snapshot sync, anonymous local profile (UUID + name in `localStorage`), 4-letter room codes.
 
-**Tech Stack:** TypeScript, pnpm workspaces, vitest, Next.js 15 (App Router), React 19, Tailwind CSS, `ws` (Node WebSocket library), Playwright for E2E. Deploy to Vercel (web) + Fly.io (server).
+**Tech Stack:** TypeScript, pnpm workspaces, vitest, Next.js 15 (App Router), React 19, Tailwind CSS, `ws` (Node WebSocket library), Playwright for E2E. Deploy via Coolify on user's VPS (two services on separate subdomains).
 
 **Spec:** `docs/superpowers/specs/2026-04-29-ludo-design.md`
 
@@ -22,7 +22,7 @@
 - **Phase 5** — Lobby, room codes, share links
 - **Phase 6** — Reconnect + AFK reliability
 - **Phase 7** — Mobile UX polish + PWA install
-- **Phase 8** — Deploy
+- **Phase 8** — Deploy via Coolify (web + WS server, two subdomains)
 
 Each task ends with a green test run (or, for UI, a live-checked screen) and a commit. Checkbox each step as you complete it.
 
@@ -2377,9 +2377,15 @@ import { ClientMessage, type ServerMessage } from './protocol.js';
 import { RoomManager } from './rooms.js';
 import { rollDie, legalMoves } from '@ludo/game-logic';
 
-export function startWsServer(port: number, mgr = new RoomManager()) {
-  const wss = new WebSocketServer({ port });
-  console.log(`Ludo WS server listening on :${port}`);
+/**
+ * Attaches a WebSocket server to an existing http.Server so HTTP and WS share one port.
+ * This is required for Coolify/Traefik deployment (one port per Coolify service).
+ */
+export function attachWsServer(httpServer: import('http').Server, mgr = new RoomManager()) {
+  const wss = new WebSocketServer({ noServer: true });
+  httpServer.on('upgrade', (req, sock, head) => {
+    wss.handleUpgrade(req, sock, head, (ws) => wss.emit('connection', ws, req));
+  });
 
   // socket → { code, playerId }
   const ctx = new WeakMap<WebSocket, { code: string; playerId: string }>();
@@ -2483,14 +2489,15 @@ export function startWsServer(port: number, mgr = new RoomManager()) {
 
 ```ts
 import http from 'node:http';
-import { startWsServer } from './wsServer.js';
+import { attachWsServer } from './wsServer.js';
 import { RoomManager } from './rooms.js';
 
 const port = Number(process.env.PORT ?? 8787);
+const corsOrigin = process.env.CORS_ORIGIN ?? '*';
 const mgr = new RoomManager();
 
 const httpServer = http.createServer((req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'content-type');
   if (req.method === 'OPTIONS') return res.end();
@@ -2513,19 +2520,21 @@ const httpServer = http.createServer((req, res) => {
     });
     return;
   }
+  if (req.method === 'GET' && req.url === '/health') {
+    res.end('ok');
+    return;
+  }
   res.statusCode = 404; res.end();
 });
 
-httpServer.listen(port, () => console.log(`Ludo HTTP on :${port}`));
-startWsServer(port + 1, mgr);
+attachWsServer(httpServer, mgr);
+httpServer.listen(port, () => console.log(`Ludo server (HTTP + WS) on :${port}`));
 ```
 
 - [ ] **Step 4: Smoke run**
 
-Two terminals:
-
 ```bash
-pnpm dev:server    # starts HTTP :8787 and WS :8788
+pnpm dev:server    # starts HTTP + WS both on :8787
 ```
 
 ```bash
@@ -2552,17 +2561,24 @@ git commit -m "feat(server): WebSocket transport + room HTTP create"
 
 ```ts
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import http from 'node:http';
 import WebSocket from 'ws';
-import { startWsServer } from '../src/wsServer';
+import { attachWsServer } from '../src/wsServer';
 import { RoomManager } from '../src/rooms';
 
 const PORT = 19191;
-let server: ReturnType<typeof startWsServer>;
+let httpServer: http.Server;
+let mgr: RoomManager;
 
-beforeAll(() => { server = startWsServer(PORT, new RoomManager(() => 1000)); });
-afterAll(() => server.wss.close());
+beforeAll(async () => {
+  mgr = new RoomManager(() => 1000);
+  httpServer = http.createServer();
+  attachWsServer(httpServer, mgr);
+  await new Promise<void>((r) => httpServer.listen(PORT, r));
+});
+afterAll(() => new Promise<void>((r) => httpServer.close(() => r())));
 
-const ws = (path = '') => new WebSocket(`ws://localhost:${PORT}${path}`);
+const ws = () => new WebSocket(`ws://localhost:${PORT}`);
 
 const wait = (s: WebSocket, predicate: (msg: any) => boolean) =>
   new Promise<any>((resolve) => {
@@ -2574,8 +2590,7 @@ const wait = (s: WebSocket, predicate: (msg: any) => boolean) =>
 
 describe('ws integration', () => {
   it('host creates, guest joins, both see updated state', async () => {
-    // create via mgr directly because server only opens one HTTP port
-    const code = server.mgr.createRoom({ hostId: 'host', hostName: 'Host', hostAvatar: '🐱' });
+    const code = mgr.createRoom({ hostId: 'host', hostName: 'Host', hostAvatar: '🐱' });
 
     const a = ws(); const b = ws();
     await new Promise((r) => a.once('open', r));
@@ -2855,8 +2870,10 @@ export default function Home() {
 `apps/web/.env.local`:
 ```
 NEXT_PUBLIC_LUDO_HTTP=http://localhost:8787
-NEXT_PUBLIC_LUDO_WS=ws://localhost:8788
+NEXT_PUBLIC_LUDO_WS=ws://localhost:8787
 ```
+
+(In dev and prod, HTTP and WebSocket share the same port/host. Coolify + Traefik handles `wss://` on port 443 in prod automatically.)
 
 - [ ] **Step 4: Commit**
 
@@ -2944,7 +2961,7 @@ import { Lobby } from '@/components/Lobby';
 import { ProfileForm } from '@/components/ProfileForm';
 import { legalMoves } from '@ludo/game-logic';
 
-const WS_URL = process.env.NEXT_PUBLIC_LUDO_WS ?? 'ws://localhost:8788';
+const WS_URL = process.env.NEXT_PUBLIC_LUDO_WS ?? 'ws://localhost:8787';
 
 export default function RoomPage() {
   const { code } = useParams<{ code: string }>();
@@ -3389,119 +3406,260 @@ git commit -m "feat: win screen and play again"
 
 ---
 
-# Phase 8: Deploy
+# Phase 8: Deploy (Coolify)
 
-## Task 8.1: Server Dockerfile + Fly.io config
+Both services deploy as separate Coolify "applications" on the user's existing VPS, on separate subdomains, with auto-managed TLS via Let's Encrypt (handled by Coolify's Traefik proxy).
+
+**Placeholders used throughout this phase** (the user fills these in once they have a domain):
+- `LUDO_WEB_DOMAIN` — e.g. `ludo.example.com` (the Next.js web app)
+- `LUDO_WS_DOMAIN` — e.g. `ludo-ws.example.com` (the WebSocket + HTTP server)
+
+## Task 8.1: Server Dockerfile
 
 **Files:**
 - Create: `apps/server/Dockerfile`
-- Create: `apps/server/fly.toml`
+- Create: `.dockerignore` (root)
 
-- [ ] **Step 1: Dockerfile**
+- [ ] **Step 1: Root `.dockerignore`**
+
+```
+node_modules
+**/node_modules
+**/dist
+**/.next
+.git
+.superpowers
+docs
+*.log
+```
+
+- [ ] **Step 2: `apps/server/Dockerfile`**
 
 ```dockerfile
-FROM node:20-slim AS base
+# ---- builder ----
+FROM node:20-slim AS builder
 RUN corepack enable
 WORKDIR /app
-COPY pnpm-workspace.yaml package.json ./
+
+# Copy workspace manifests first for better layer caching
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
 COPY tsconfig.base.json ./
+COPY packages/game-logic/package.json packages/game-logic/
+COPY apps/server/package.json apps/server/
+
+RUN pnpm install --filter @ludo/server... --frozen-lockfile=false
+
 COPY packages/game-logic packages/game-logic
 COPY apps/server apps/server
-RUN pnpm install --filter @ludo/server... --frozen-lockfile=false
+
 RUN pnpm --filter @ludo/server build
-EXPOSE 8787 8788
+
+# ---- runner ----
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+RUN corepack enable
+
+COPY --from=builder /app/pnpm-workspace.yaml /app/package.json ./
+COPY --from=builder /app/packages/game-logic packages/game-logic
+COPY --from=builder /app/apps/server/package.json apps/server/
+COPY --from=builder /app/apps/server/dist apps/server/dist
+COPY --from=builder /app/node_modules node_modules
+COPY --from=builder /app/apps/server/node_modules apps/server/node_modules
+COPY --from=builder /app/packages/game-logic/node_modules packages/game-logic/node_modules
+
+EXPOSE 8787
 CMD ["node", "apps/server/dist/index.js"]
 ```
 
-- [ ] **Step 2: fly.toml**
-
-```toml
-app = "ludo-server"
-primary_region = "iad"
-
-[build]
-  dockerfile = "apps/server/Dockerfile"
-
-[env]
-  PORT = "8787"
-
-[[services]]
-  internal_port = 8787
-  protocol = "tcp"
-  [[services.ports]]
-    handlers = ["http"]
-    port = 80
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
-
-[[services]]
-  internal_port = 8788
-  protocol = "tcp"
-  [[services.ports]]
-    handlers = ["tls"]
-    port = 8788
-```
-
-(Adjust per Fly's current syntax; `flyctl launch` will auto-generate most of this. Two ports for HTTP+WS.)
-
-- [ ] **Step 3: Deploy**
+- [ ] **Step 3: Local build smoke test**
 
 ```bash
-flyctl auth login    # interactive — needs the user
-flyctl launch --no-deploy
-flyctl deploy
+docker build -f apps/server/Dockerfile -t ludo-server .
+docker run --rm -p 8787:8787 ludo-server
+# In another terminal:
+curl -s http://localhost:8787/health    # → "ok"
 ```
 
-Note: tell the user to run these themselves (interactive auth + provisions resources).
-
-- [ ] **Step 4: Commit configs**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -A
-git commit -m "chore(server): Dockerfile + fly.toml"
+git commit -m "chore(server): production Dockerfile"
 ```
 
 ---
 
-## Task 8.2: Web → Vercel
+## Task 8.2: Web Dockerfile
 
 **Files:**
-- Modify: `apps/web/.env.production` (or set in Vercel UI)
-- Optional: `apps/web/vercel.json`
+- Create: `apps/web/Dockerfile`
+- Modify: `apps/web/next.config.mjs` (enable standalone output)
 
-- [ ] **Step 1: Set env vars in Vercel**
+- [ ] **Step 1: Enable standalone output**
 
+`apps/web/next.config.mjs`:
+```js
+import withPWA from 'next-pwa';
+const config = {
+  reactStrictMode: true,
+  output: 'standalone',
+};
+export default withPWA({ dest: 'public', register: true, skipWaiting: true })(config);
 ```
-NEXT_PUBLIC_LUDO_HTTP=https://ludo-server.fly.dev
-NEXT_PUBLIC_LUDO_WS=wss://ludo-server.fly.dev:8788
+
+`output: 'standalone'` makes Next.js emit a tiny self-contained server in `.next/standalone/`, perfect for Docker.
+
+- [ ] **Step 2: `apps/web/Dockerfile`**
+
+```dockerfile
+# ---- builder ----
+FROM node:20-slim AS builder
+RUN corepack enable
+WORKDIR /app
+
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
+COPY tsconfig.base.json ./
+COPY packages/game-logic/package.json packages/game-logic/
+COPY apps/web/package.json apps/web/
+
+RUN pnpm install --filter @ludo/web... --frozen-lockfile=false
+
+COPY packages/game-logic packages/game-logic
+COPY apps/web apps/web
+
+# Build-time public env vars (baked into the JS bundle)
+ARG NEXT_PUBLIC_LUDO_HTTP
+ARG NEXT_PUBLIC_LUDO_WS
+ENV NEXT_PUBLIC_LUDO_HTTP=$NEXT_PUBLIC_LUDO_HTTP
+ENV NEXT_PUBLIC_LUDO_WS=$NEXT_PUBLIC_LUDO_WS
+
+RUN pnpm --filter @ludo/web build
+
+# ---- runner ----
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Next.js standalone output is self-contained
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "apps/web/server.js"]
 ```
 
-- [ ] **Step 2: Deploy**
+- [ ] **Step 3: Local build smoke test**
 
 ```bash
-cd apps/web
-vercel link
-vercel --prod
+docker build -f apps/web/Dockerfile \
+  --build-arg NEXT_PUBLIC_LUDO_HTTP=http://localhost:8787 \
+  --build-arg NEXT_PUBLIC_LUDO_WS=ws://localhost:8787 \
+  -t ludo-web .
+docker run --rm -p 3000:3000 ludo-web
+# Open http://localhost:3000
 ```
 
-(Tell the user to run these — interactive auth.)
-
-- [ ] **Step 3: Smoke test on real phones**
-
-Real iPhone Safari + Android Chrome:
-- Land on URL, set profile, create game
-- Open the share link in Android Chrome on a different network → join
-- Add a bot, start, play to a winner
-- Add to Home Screen on both phones
-- Background the app on iPhone, return → reconnects
-
-- [ ] **Step 4: Commit + tag**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -A
-git commit -m "chore: production env wiring"
+git commit -m "chore(web): production Dockerfile + standalone output"
+```
+
+---
+
+## Task 8.3: Coolify deployment
+
+**This task is mostly user-driven** — Coolify is configured through its web UI, not a config file in the repo. The implementer's job is to (a) document the steps clearly, (b) make sure env vars and ports match what Coolify expects, and (c) verify after the user deploys.
+
+**Prerequisites the user provides:**
+1. A registered domain (e.g. `example.com`) and access to its DNS.
+2. A running Coolify instance (already used for prior projects).
+3. The repo pushed to GitHub (or another Git host that Coolify can pull from).
+
+- [ ] **Step 1: User points DNS at the VPS**
+
+In their domain registrar (Cloudflare, Namecheap, Porkbun, etc.), the user adds two A records pointing at their VPS's IP address:
+
+```
+LUDO_WEB_DOMAIN     A    <VPS IP>
+LUDO_WS_DOMAIN      A    <VPS IP>
+```
+
+Wait until they resolve (`dig LUDO_WEB_DOMAIN +short` returns the IP).
+
+- [ ] **Step 2: Push the repo to GitHub**
+
+```bash
+gh repo create Ludo --private --source=. --push
+# or, if the remote already exists:
+git push -u origin main
+```
+
+- [ ] **Step 3: Create the WebSocket server application in Coolify**
+
+In the Coolify UI:
+1. **+ New Resource → Application → Public/Private Repository**.
+2. Connect to GitHub, pick the `Ludo` repo, branch `main`.
+3. **Build Pack:** Dockerfile.
+4. **Dockerfile location:** `apps/server/Dockerfile`.
+5. **Build context:** repository root (`.`) — the Dockerfile copies the whole monorepo.
+6. **Port:** `8787`.
+7. **Domain:** `https://LUDO_WS_DOMAIN`.
+8. **Environment variables:**
+   - `PORT=8787`
+   - `CORS_ORIGIN=https://LUDO_WEB_DOMAIN`
+9. **Health check path:** `/health`.
+10. Click **Deploy**. Wait for build + TLS issuance (~2–4 minutes).
+
+Verify:
+```bash
+curl -s https://LUDO_WS_DOMAIN/health    # → "ok"
+```
+
+- [ ] **Step 4: Create the Web application in Coolify**
+
+In the Coolify UI:
+1. **+ New Resource → Application → Public/Private Repository**.
+2. Same `Ludo` repo, branch `main`.
+3. **Build Pack:** Dockerfile.
+4. **Dockerfile location:** `apps/web/Dockerfile`.
+5. **Build context:** repository root.
+6. **Port:** `3000`.
+7. **Domain:** `https://LUDO_WEB_DOMAIN`.
+8. **Build-time env vars** (Coolify exposes these as `--build-arg`):
+   - `NEXT_PUBLIC_LUDO_HTTP=https://LUDO_WS_DOMAIN`
+   - `NEXT_PUBLIC_LUDO_WS=wss://LUDO_WS_DOMAIN`
+9. **Runtime env vars:** none required.
+10. Click **Deploy**.
+
+- [ ] **Step 5: Verify auto-deploy on push**
+
+Coolify watches the `main` branch by default. Push a trivial change:
+
+```bash
+git commit --allow-empty -m "test: redeploy"
+git push
+```
+
+Both applications should rebuild and redeploy automatically. Confirm in Coolify's deploy logs.
+
+- [ ] **Step 6: Smoke test on real phones**
+
+- Open `https://LUDO_WEB_DOMAIN` on real iPhone Safari + Android Chrome (different networks).
+- Set profile, create a game, open the share link on the second device, join, play to a winner.
+- Add to Home Screen on both phones — confirm standalone launch.
+- Background the app on iPhone → return — confirm reconnect banner clears.
+
+- [ ] **Step 7: Tag**
+
+```bash
 git tag v0.1.0
+git push --tags
 ```
 
 ---

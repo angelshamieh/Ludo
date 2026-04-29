@@ -30,8 +30,9 @@ Build a Ludo board game that the user can share with family soon as a web app. F
 | Ruleset | Classic Western Ludo | User selection. Roll a 6 to leave home, capture by landing on opponent (except safe squares), exact roll to enter center |
 | Visual style | Cozy & warm — soft pastels, rounded corners, paper/wood feel | User selection |
 | Platform | Web app (Next.js + React + TypeScript), PWA-installable | Single shareable URL, no app stores; "Add to Home Screen" gives app-like feel |
-| Path to native | Capacitor wrap of same web codebase, later | All game logic stays in web/TS code; no Vercel-only or Next-only dependencies for game logic |
+| Path to native | Capacitor wrap of same web codebase, later | All game logic stays in web/TS code; no host-specific or Next-only dependencies for game logic |
 | Form factor | Mobile-first (portrait phone), desktop is a wider variant | User will mostly play on mobile |
+| Deployment | Coolify on user's VPS, two services on separate subdomains | Self-hosted, single host, low cost, same pattern user already runs for other projects |
 
 ## Architecture
 
@@ -45,7 +46,7 @@ Renders the lobby and game board, handles input. Includes PWA manifest + service
 
 Holds authoritative `GameState` for each room in memory. Validates every action via `game-logic.legalMoves(state, dice)`. Broadcasts state snapshots to all room members. Stateless except for the in-memory room map; rooms expire 10 minutes after the last player leaves.
 
-Hosting target: Fly.io or Railway (long-lived WebSocket connections; not a fit for Vercel serverless).
+Hosting target: **Coolify** on the user's VPS — see "Deployment" section below. Long-lived WebSocket connections work natively (Coolify uses Traefik as the reverse proxy).
 
 ### 3. Lightweight persistence — Postgres (Supabase or Neon free tier)
 
@@ -200,7 +201,48 @@ Each step ends with something runnable.
 5. **Lobby, room codes, share links, reconnect.** Turns the prototype into a shareable experience.
 6. **Bot turn handling on server.** Bots play their own turns automatically.
 7. **Polish — animations, AFK handling, win screen, PWA install, mobile UX pass.** The "feels finished" iteration.
-8. **Deploy.** Web client to Vercel, WebSocket server to Fly.io or Railway. Postgres standing by (Supabase/Neon) for later use.
+8. **Deploy.** Both services to Coolify on user's VPS — see "Deployment" section.
+
+## Deployment
+
+Both services run as separate Coolify "applications" on the user's existing VPS, each with its own subdomain and auto-managed TLS via Let's Encrypt (Coolify handles this through Traefik).
+
+### Service A — Web (Next.js)
+
+- **Subdomain:** `LUDO_WEB_DOMAIN` (placeholder — e.g. `ludo.example.com`)
+- **Build:** Dockerfile in `apps/web/Dockerfile` (Node 20, multi-stage, runs `next build`)
+- **Runtime:** `next start` on port 3000
+- **Coolify config:** General application, exposes port 3000, domain set to `LUDO_WEB_DOMAIN`
+- **Env vars:**
+  - `NEXT_PUBLIC_LUDO_HTTP=https://LUDO_WS_DOMAIN`
+  - `NEXT_PUBLIC_LUDO_WS=wss://LUDO_WS_DOMAIN`
+
+### Service B — WebSocket server (Node)
+
+- **Subdomain:** `LUDO_WS_DOMAIN` (placeholder — e.g. `ludo-ws.example.com`)
+- **Build:** Dockerfile in `apps/server/Dockerfile`
+- **Runtime:** `node apps/server/dist/index.js`
+- **Coolify config:** General application, exposes a single HTTP port (8787) — the same port serves both the `POST /rooms` HTTP endpoint and the WebSocket upgrade. Traefik handles `wss://` termination automatically.
+- **Env vars:**
+  - `PORT=8787`
+  - `CORS_ORIGIN=https://LUDO_WEB_DOMAIN`
+
+### Why one port (not two)
+
+Earlier the plan assumed separate HTTP (8787) and WS (8788) ports. Coolify + Traefik works most cleanly with **one port per service**, with the WebSocket upgrade handled on the same port as HTTP. The implementation is updated to listen for both on the single HTTP server (the `ws` library supports `noServer: true` mode where you attach to an existing http.Server's `upgrade` event).
+
+### DNS
+
+User points two A records at the VPS IP:
+```
+LUDO_WEB_DOMAIN     →  <VPS IP>
+LUDO_WS_DOMAIN      →  <VPS IP>
+```
+Coolify auto-issues TLS certificates for both within ~30 seconds of the domain being added.
+
+### Persistence (deferred)
+
+Postgres is **not** deployed for v1. The spec leaves the door open to add it (finished-game records, future accounts), but it's omitted from the initial Coolify deploy to keep the surface area small. Adding it later = a third Coolify application (Coolify has a one-click Postgres template) plus a `DATABASE_URL` env var on the server.
 
 ## Open questions to resolve in implementation planning
 
