@@ -1,4 +1,5 @@
 import type { GameState, Player, Token } from './types';
+import { COLORS } from './types';
 
 export type CreateInitialStateInput = {
   code: string;
@@ -40,5 +41,28 @@ export function createInitialState(input: CreateInitialStateInput): GameState {
     log: [],
     createdAt: now,
     lastActivityAt: now,
+  };
+}
+
+export function startGame(state: GameState, opts: { now: number }): GameState {
+  if (state.status !== 'lobby') {
+    throw new Error('startGame: not in lobby');
+  }
+  if (state.players.length < 2) {
+    throw new Error('startGame: need at least 2 players');
+  }
+  // Seat order = canonical color order intersected with present players
+  const turnOrder = COLORS
+    .map((c) => state.players.find((p) => p.color === c))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
+    .map((p) => p.id);
+  const first = turnOrder[0]!;
+  return {
+    ...state,
+    status: 'playing',
+    turnOrder,
+    currentTurn: first,
+    lastActivityAt: opts.now,
+    log: [...state.log, { kind: 'turn', playerId: first }],
   };
 }
