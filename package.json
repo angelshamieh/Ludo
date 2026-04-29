@@ -3,12 +3,12 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
     "dev:web": "pnpm --filter @ludo/web dev",
     "dev:server": "pnpm --filter @ludo/server dev",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck"
   },
   "engines": {
     "node": ">=20"
