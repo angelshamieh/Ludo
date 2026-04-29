@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, startGame, legalMoves } from '../src/index';
-import type { Player } from '../src/index';
+import { createInitialState, startGame, legalMoves, projectMove } from '../src/index';
+import type { Player, Token } from '../src/index';
 
 const players: Player[] = [
   { id: 'a', name: 'A', avatar: '🐱', color: 'red',   isBot: false, isHost: true,  connected: true },
@@ -39,5 +39,23 @@ describe('legalMoves: leaving home', () => {
   it('asking for legalMoves before rolling returns empty', () => {
     const s = { ...fresh(), dice: null, rolledThisTurn: false };
     expect(legalMoves(s, 'a')).toEqual([]);
+  });
+});
+
+describe('projectMove', () => {
+  const token = (position: Token['position']): Token => ({
+    id: 'red-0', owner: 'a', color: 'red', position,
+  });
+
+  it('returns null when overshooting the finish', () => {
+    expect(projectMove(token({ kind: 'path', index: 54 }), 5)).toBeNull();
+  });
+
+  it('lands exactly on the finish (index 56)', () => {
+    expect(projectMove(token({ kind: 'path', index: 51 }), 5)).toEqual({ kind: 'path', index: 56 });
+  });
+
+  it('advances by dice pips on the outer track', () => {
+    expect(projectMove(token({ kind: 'path', index: 5 }), 3)).toEqual({ kind: 'path', index: 8 });
   });
 });
