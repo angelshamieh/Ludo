@@ -90,4 +90,49 @@ describe('applyMove', () => {
     expect(s.dice).toBe(null);
     expect(s.currentTurn).toBe('b');
   });
+
+  it('does not mutate the input state', () => {
+    const before = fresh();
+    const beforeSnapshot = JSON.parse(JSON.stringify(before));
+    const s = applyMove(
+      { ...before, dice: 6, rolledThisTurn: true },
+      { kind: 'move', tokenId: 'red-0' },
+      { now: 99 },
+    );
+    // Original `before` must be untouched
+    expect(JSON.parse(JSON.stringify(before))).toEqual(beforeSnapshot);
+    // Sanity: the returned state did change
+    expect(s).not.toBe(before);
+  });
+
+  it('appends to the log without rewriting earlier entries', () => {
+    let s = fresh();
+    const initialLogLength = s.log.length;
+    s = applyMove({ ...s, dice: 5, rolledThisTurn: true }, { kind: 'pass' }, { now: 5 });
+    expect(s.log.length).toBeGreaterThan(initialLogLength);
+    // First entry should be unchanged (it was the 'turn' event from startGame)
+    expect(s.log[0]!.kind).toBe('turn');
+  });
+
+  it('updates lastActivityAt to opts.now', () => {
+    let s = fresh();
+    s = applyMove({ ...s, dice: 4, rolledThisTurn: true }, { kind: 'pass' }, { now: 12345 });
+    expect(s.lastActivityAt).toBe(12345);
+  });
+
+  it('increments consecutiveSixes on a 6 and resets on a non-6', () => {
+    let s = fresh();
+    s = setToken(s, 'a', 0, { kind: 'path', index: 0 });
+    // First move: dice=6 → extra turn for 'a', consecutiveSixes should be 1
+    s = applyMove({ ...s, dice: 6, rolledThisTurn: true }, { kind: 'move', tokenId: 'red-0' }, { now: 5 });
+    expect(s.consecutiveSixes).toBe(1);
+    expect(s.currentTurn).toBe('a');
+    // Second move: dice=6 again → counter goes to 2
+    s = applyMove({ ...s, dice: 6, rolledThisTurn: true }, { kind: 'move', tokenId: 'red-0' }, { now: 6 });
+    expect(s.consecutiveSixes).toBe(2);
+    // Third move: dice=3, non-6 → counter resets to 0, turn passes to 'b'
+    s = applyMove({ ...s, dice: 3, rolledThisTurn: true }, { kind: 'move', tokenId: 'red-0' }, { now: 7 });
+    expect(s.consecutiveSixes).toBe(0);
+    expect(s.currentTurn).toBe('b');
+  });
 });

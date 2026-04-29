@@ -1,5 +1,5 @@
 import type { GameEvent, GameState, Move, Token, TokenPosition } from './types';
-import { FINISH_INDEX, SAFE_ABSOLUTE_SQUARES, trackAbsolute } from './board';
+import { FINISH_INDEX, LAST_SHARED_TRACK_INDEX, SAFE_ABSOLUTE_SQUARES, trackAbsolute } from './board';
 
 /** Where would the given token end up if moved by `dice` pips? Returns null if the move is illegal. */
 export function projectMove(token: Token, dice: number): TokenPosition | null {
@@ -42,7 +42,7 @@ const isCapturable = (
 ): boolean => {
   if (victim.color === myColor) return false;
   if (victim.position.kind !== 'path') return false;
-  if (victim.position.index > 50) return false;            // in their home column
+  if (victim.position.index > LAST_SHARED_TRACK_INDEX) return false;            // in their home column
   if (victim.position.index === FINISH_INDEX) return false; // finished (defensive — index 56)
   // Victim's absolute square:
   const victimAbs = trackAbsolute(victim.color, victim.position.index);
@@ -61,9 +61,11 @@ export function applyMove(
   move: Move,
   opts: { now: number },
 ): GameState {
-  if (state.status !== 'playing') throw new Error('applyMove: not playing');
+  if (state.status !== 'playing') throw new Error(`applyMove: expected playing status, got ${state.status}`);
   if (state.currentTurn == null) throw new Error('applyMove: no current turn');
-  if (state.dice == null || !state.rolledThisTurn) throw new Error('applyMove: must roll first');
+  if (state.dice == null || !state.rolledThisTurn) {
+    throw new Error(`applyMove: must roll before moving (dice=${state.dice}, rolled=${state.rolledThisTurn})`);
+  }
   const playerId = state.currentTurn;
   const dice = state.dice;
   const log: GameEvent[] = [...state.log];
@@ -88,14 +90,16 @@ export function applyMove(
   if (tokenIdx < 0) throw new Error(`applyMove: token ${move.tokenId} not owned by ${playerId}`);
   const token = tokens[tokenIdx]!;
   const projected = projectMove(token, dice);
-  if (projected == null) throw new Error('applyMove: illegal move');
+  if (projected == null) {
+    throw new Error(`applyMove: illegal move (token=${token.id}, from=${JSON.stringify(token.position)}, dice=${dice})`);
+  }
 
   const newToken: Token = { ...token, position: projected };
   const newTokens: Record<string, Token[]> = { ...state.tokens };
   newTokens[playerId] = tokens.map((t, i) => (i === tokenIdx ? newToken : t));
 
   let captured = false;
-  if (projected.kind === 'path' && projected.index <= 50) {
+  if (projected.kind === 'path' && projected.index <= LAST_SHARED_TRACK_INDEX) {
     const myAbs = trackAbsolute(token.color, projected.index);
     for (const otherId of Object.keys(newTokens)) {
       if (otherId === playerId) continue;

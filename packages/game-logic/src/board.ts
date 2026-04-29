@@ -15,6 +15,9 @@ export const PATH_LENGTH = OUTER_PATH_STEPS + FINAL_RUN_LENGTH + 1;
 /** The path index that represents a token finishing in the center. */
 export const FINISH_INDEX = PATH_LENGTH - 1;
 
+/** The last path index on the shared outer track before turning into the home column. */
+export const LAST_SHARED_TRACK_INDEX = OUTER_PATH_STEPS - 1; // 50
+
 export const START_OFFSET: Record<Color, number> = {
   red: 0,
   green: 13,
