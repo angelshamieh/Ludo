@@ -1493,6 +1493,7 @@ html, body { background: theme(colors.paper); color: theme(colors.ink); }
 
 /* Use dynamic viewport height where available so iOS Safari doesn't hide content under the address bar. */
 .h-screen-d { height: 100vh; height: 100dvh; }
+.min-h-screen-d { min-height: 100vh; min-height: 100dvh; }
 ```
 
 - [ ] **Step 3: Commit**
