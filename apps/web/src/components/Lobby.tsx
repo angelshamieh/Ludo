@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import type { GameState } from '@ludo/game-logic';
 
 export function Lobby({ state, meId, shareUrl, onAddBot, onStart }: {
@@ -11,12 +12,21 @@ export function Lobby({ state, meId, shareUrl, onAddBot, onStart }: {
   const me = state.players.find((p) => p.id === meId);
   const canStart = me?.isHost && state.players.length >= 2;
   const canAddBot = me?.isHost && state.players.length < 4;
+  const [copyMsg, setCopyMsg] = useState<string | null>(null);
 
   const share = async () => {
     const data = { title: 'Ludo', text: `Join my Ludo game, code ${state.code}`, url: shareUrl };
-    if (navigator.share) { try { await navigator.share(data); return; } catch {} }
-    await navigator.clipboard.writeText(shareUrl);
-    alert('Link copied!');
+    if (navigator.share) {
+      try { await navigator.share(data); return; } catch { /* fall through */ }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopyMsg('Link copied to clipboard');
+    } catch {
+      // Clipboard can fail when the document isn't focused (devtools open, background tab, etc.)
+      setCopyMsg('Copy the link below manually');
+    }
+    setTimeout(() => setCopyMsg(null), 3000);
   };
 
   return (
@@ -27,6 +37,18 @@ export function Lobby({ state, meId, shareUrl, onAddBot, onStart }: {
         <div className="font-mono text-3xl tracking-widest">{state.code}</div>
       </div>
       <button onClick={share} className="bg-ink text-paper py-3 px-6 rounded-xl">Share invite</button>
+
+      {/* Always-visible URL so users can copy manually if the clipboard API fails */}
+      <div className="w-full">
+        <input
+          readOnly
+          value={shareUrl}
+          onClick={(e) => e.currentTarget.select()}
+          className="w-full px-3 py-2 rounded-lg border border-edge bg-white font-mono text-xs text-center"
+          aria-label="Game share URL"
+        />
+        {copyMsg && <p className="text-xs opacity-70 text-center mt-1">{copyMsg}</p>}
+      </div>
 
       <ul className="w-full flex flex-col gap-2">
         {state.players.map((p) => (
