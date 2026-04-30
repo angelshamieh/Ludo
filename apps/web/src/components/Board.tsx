@@ -93,15 +93,15 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
           `M ${sx} ${sy - size} L ${sx + size*0.25} ${sy - size*0.25} L ${sx + size} ${sy} L ${sx + size*0.25} ${sy + size*0.25} L ${sx} ${sy + size} L ${sx - size*0.25} ${sy + size*0.25} L ${sx - size} ${sy} L ${sx - size*0.25} ${sy - size*0.25} Z`;
         return (
           <g key={t.id}
-             onClick={onTokenClick ? () => onTokenClick(t.id) : undefined}
-             style={{ cursor: onTokenClick ? 'pointer' : 'default' }}
+             onClick={onTokenClick && isHinted ? () => onTokenClick(t.id) : undefined}
+             style={{ cursor: onTokenClick && isHinted ? 'pointer' : 'default' }}
           >
             {/* Extended invisible hit-area for mobile taps */}
-            <circle cx={cx} cy={cy} r={CELL*0.7} fill="transparent" />
+            <circle cx={cx} cy={cy} r={CELL*0.7} fill="transparent" style={{ pointerEvents: 'all' }} />
 
             {/* Bright white glow halo behind the token */}
             {isHinted && (
-              <circle cx={cx} cy={cy} r={CELL*0.6} fill="#fff" opacity={0.55}>
+              <circle cx={cx} cy={cy} r={CELL*0.6} fill="#fff" opacity={0.55} style={{ pointerEvents: 'none' }}>
                 <animate attributeName="opacity" values="0.3;0.7;0.3" dur="1.2s" repeatCount="indefinite"/>
                 <animate attributeName="r" values={`${CELL*0.55};${CELL*0.7};${CELL*0.55}`} dur="1.2s" repeatCount="indefinite"/>
               </circle>
@@ -109,7 +109,7 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
 
             {/* Soft amber aura just behind/around the token */}
             {isHinted && (
-              <circle cx={cx} cy={cy} r={CELL*0.5} fill="#fbbf24" opacity={0.5}>
+              <circle cx={cx} cy={cy} r={CELL*0.5} fill="#fbbf24" opacity={0.5} style={{ pointerEvents: 'none' }}>
                 <animate attributeName="opacity" values="0.25;0.55;0.25" dur="1.2s" repeatCount="indefinite"/>
               </circle>
             )}
@@ -122,7 +122,7 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
 
             {/* Rotating sparkles around the token */}
             {isHinted && (
-              <g>
+              <g style={{ pointerEvents: 'none' }}>
                 <animateTransform attributeName="transform" type="rotate"
                   from={`0 ${cx} ${cy}`} to={`360 ${cx} ${cy}`}
                   dur="4s" repeatCount="indefinite"/>
