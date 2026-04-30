@@ -2,9 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "noEmit": false,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "noEmit": false
   },
   "include": ["src/**/*", "tests/**/*"]
 }
