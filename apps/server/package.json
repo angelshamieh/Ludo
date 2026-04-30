@@ -1,0 +1,25 @@
+{
+  "name": "@ludo/server",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo skip"
+  },
+  "dependencies": {
+    "@ludo/game-logic": "workspace:*",
+    "ws": "8",
+    "zod": "3"
+  },
+  "devDependencies": {
+    "@types/ws": "8",
+    "tsx": "4",
+    "typescript": "5.5",
+    "vitest": "2"
+  }
+}
