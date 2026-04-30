@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="102" fill="#fdf6ec"/>
+  <rect x="51.2" y="51.2" width="179.2" height="179.2" rx="25.6" fill="#e8a3a3"/>
+  <rect x="281.6" y="51.2" width="179.2" height="179.2" rx="25.6" fill="#a3c9a8"/>
+  <rect x="281.6" y="281.6" width="179.2" height="179.2" rx="25.6" fill="#f0d896"/>
+  <rect x="51.2" y="281.6" width="179.2" height="179.2" rx="25.6" fill="#a3b8d6"/>
+  <text x="50%" y="56%" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="180" fill="#3a2e1f">L</text>
+</svg>
