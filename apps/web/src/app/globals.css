@@ -44,3 +44,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
