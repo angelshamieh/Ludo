@@ -1,6 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
+import { Buzz } from '@/lib/haptics';
 import { useLocalProfile } from '@/lib/useLocalProfile';
 import { useRoomConnection } from '@/lib/useRoomConnection';
 import { Board } from '@/components/Board';
@@ -24,6 +25,20 @@ export default function RoomPage() {
     [state, profile],
   );
   const hint = useMemo(() => new Set(moves.flatMap((m) => m.kind === 'move' ? [m.tokenId] : [])), [moves]);
+
+  const lastLogLen = useRef(0);
+  useEffect(() => {
+    if (!state || !profile) return;
+    const newEvents = state.log.slice(lastLogLen.current);
+    lastLogLen.current = state.log.length;
+    for (const e of newEvents) {
+      if (e.kind === 'captured' && e.victim === profile.playerId) Buzz.capture();
+      if (e.kind === 'won') {
+        if (e.playerId === profile.playerId) Buzz.win();
+      }
+      if (e.kind === 'turn' && e.playerId === profile.playerId) Buzz.tap();
+    }
+  }, [state, profile]);
 
   if (!profile) return (
     <main className="min-h-screen-d flex items-center justify-center p-4">

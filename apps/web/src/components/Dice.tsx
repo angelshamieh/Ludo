@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { Buzz } from '@/lib/haptics';
 
 const PIPS: Record<number, [number, number][]> = {
   1: [[1,1]],
@@ -50,6 +51,7 @@ export function Dice({ value, onRoll, disabled }: {
 
   const handleClick = () => {
     if (disabled || isRolling) return;
+    Buzz.roll();
     setRollFace(1 + Math.floor(Math.random() * 6));
   };
 
