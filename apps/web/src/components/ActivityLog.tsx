@@ -6,8 +6,14 @@ const formatEvent = (e: GameState['log'][number], state: GameState): string => {
   switch (e.kind) {
     case 'rolled':   return `${name(e.playerId)} rolled ${e.value}`;
     case 'moved':    return `${name(e.playerId)} moved a token`;
-    case 'captured': return `${name(e.capturer)} captured ${name(e.victim)}'s token!`;
-    case 'turn':     return `${name(e.playerId)}'s turn`;
+    case 'captured': {
+      const cap = e.capturer === 'me' ? 'You' : name(e.capturer);
+      const victim = e.victim === 'me' ? 'your' : `${name(e.victim)}'s`;
+      return `${cap} captured ${victim} token!`;
+    }
+    case 'turn': {
+      return e.playerId === 'me' ? 'Your turn' : `${name(e.playerId)}'s turn`;
+    }
     case 'won':      return `🏆 ${name(e.playerId)} wins!`;
   }
 };
