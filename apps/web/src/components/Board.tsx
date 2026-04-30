@@ -88,6 +88,9 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
         const cx = c.col*CELL + CELL/2;
         const cy = c.row*CELL + CELL/2;
         const isHinted = hintTokenIds?.has(t.id);
+        // Sparkle "+" shape, used for the rotating sparkles
+        const sparklePath = (sx: number, sy: number, size: number) =>
+          `M ${sx} ${sy - size} L ${sx + size*0.25} ${sy - size*0.25} L ${sx + size} ${sy} L ${sx + size*0.25} ${sy + size*0.25} L ${sx} ${sy + size} L ${sx - size*0.25} ${sy + size*0.25} L ${sx - size} ${sy} L ${sx - size*0.25} ${sy - size*0.25} Z`;
         return (
           <g key={t.id}
              onClick={onTokenClick ? () => onTokenClick(t.id) : undefined}
@@ -96,11 +99,18 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
             {/* Extended invisible hit-area for mobile taps */}
             <circle cx={cx} cy={cy} r={CELL*0.7} fill="transparent" />
 
-            {/* Hint glow halo (pulses opacity behind the token) */}
+            {/* Bright white glow halo behind the token */}
             {isHinted && (
-              <circle cx={cx} cy={cy} r={CELL*0.55} fill="#fbbf24" opacity={0.35}>
-                <animate attributeName="opacity" values="0.15;0.55;0.15" dur="1.2s" repeatCount="indefinite"/>
-                <animate attributeName="r" values={`${CELL*0.5};${CELL*0.6};${CELL*0.5}`} dur="1.2s" repeatCount="indefinite"/>
+              <circle cx={cx} cy={cy} r={CELL*0.6} fill="#fff" opacity={0.55}>
+                <animate attributeName="opacity" values="0.3;0.7;0.3" dur="1.2s" repeatCount="indefinite"/>
+                <animate attributeName="r" values={`${CELL*0.55};${CELL*0.7};${CELL*0.55}`} dur="1.2s" repeatCount="indefinite"/>
+              </circle>
+            )}
+
+            {/* Soft amber aura just behind/around the token */}
+            {isHinted && (
+              <circle cx={cx} cy={cy} r={CELL*0.5} fill="#fbbf24" opacity={0.5}>
+                <animate attributeName="opacity" values="0.25;0.55;0.25" dur="1.2s" repeatCount="indefinite"/>
               </circle>
             )}
 
@@ -110,14 +120,30 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
               fill={tokenFill[t.color]} stroke={tokenStroke[t.color]} strokeWidth={2}
             />
 
-            {/* Bright amber dashed ring on top of the halo when hinted */}
+            {/* Rotating sparkles around the token */}
             {isHinted && (
-              <circle cx={cx} cy={cy} r={CELL*0.46} fill="none"
-                stroke="#f59e0b" strokeWidth={3.5}
-                strokeDasharray="5 4"
-                strokeLinecap="round">
-                <animate attributeName="stroke-dashoffset" from="0" to="18" dur="1s" repeatCount="indefinite"/>
-              </circle>
+              <g>
+                <animateTransform attributeName="transform" type="rotate"
+                  from={`0 ${cx} ${cy}`} to={`360 ${cx} ${cy}`}
+                  dur="4s" repeatCount="indefinite"/>
+                {/* 4 sparkle stars at NE / NW / SE / SW */}
+                <path d={sparklePath(cx + CELL*0.45, cy - CELL*0.45, CELL*0.13)}
+                      fill="#fff" stroke="#f59e0b" strokeWidth={0.6}>
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="1s" repeatCount="indefinite"/>
+                </path>
+                <path d={sparklePath(cx + CELL*0.45, cy + CELL*0.45, CELL*0.10)}
+                      fill="#fff" stroke="#f59e0b" strokeWidth={0.5}>
+                  <animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite"/>
+                </path>
+                <path d={sparklePath(cx - CELL*0.45, cy + CELL*0.45, CELL*0.13)}
+                      fill="#fff" stroke="#f59e0b" strokeWidth={0.6}>
+                  <animate attributeName="opacity" values="0.4;1;0.4" dur="1.2s" repeatCount="indefinite"/>
+                </path>
+                <path d={sparklePath(cx - CELL*0.45, cy - CELL*0.45, CELL*0.10)}
+                      fill="#fff" stroke="#f59e0b" strokeWidth={0.5}>
+                  <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite"/>
+                </path>
+              </g>
             )}
           </g>
         );
