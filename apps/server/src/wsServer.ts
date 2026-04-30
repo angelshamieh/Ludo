@@ -32,23 +32,38 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
 
   /**
    * Plays out any consecutive bot turns until a human's turn or the game ends.
-   * Bots roll then move synchronously; the inner loop continues until a non-bot is up.
+   * Each bot action is broadcast individually with a delay so human players can
+   * watch each roll and move animate, instead of seeing the world snap to the
+   * end-state after all bots played.
    */
+  const BOT_STEP_MS = 1100;
+  const inFlight = new Set<string>(); // codes that already have an active bot loop
   const handleBotTurns = (code: string) => {
-    let room = mgr.getRoom(code);
-    while (room && room.state.status === 'playing' && room.state.currentTurn) {
-      const cur = room.state.players.find((p) => p.id === room!.state.currentTurn);
-      if (!cur?.isBot) break;
+    if (inFlight.has(code)) return; // avoid concurrent loops on the same room
+    inFlight.add(code);
+    const step = () => {
+      const room = mgr.getRoom(code);
+      if (!room || room.state.status !== 'playing' || !room.state.currentTurn) {
+        inFlight.delete(code);
+        return;
+      }
+      const cur = room.state.players.find((p) => p.id === room.state.currentTurn);
+      if (!cur?.isBot) {
+        inFlight.delete(code);
+        return;
+      }
       if (!room.state.rolledThisTurn) {
         mgr.roll(code, cur.id, rollDie());
-        room = mgr.getRoom(code);
-        continue;
+        broadcast(code);
+        setTimeout(step, BOT_STEP_MS);
+        return;
       }
       const move = mgr.chooseBotMove(room.state);
       mgr.move(code, cur.id, move);
-      room = mgr.getRoom(code);
-    }
-    broadcast(code);
+      broadcast(code);
+      setTimeout(step, BOT_STEP_MS);
+    };
+    setTimeout(step, BOT_STEP_MS);
   };
 
   wss.on('connection', (socket) => {
@@ -83,7 +98,7 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
             const room = mgr.getRoom(c.code)!;
             const moves = legalMoves(room.state, c.playerId);
             if (moves.length === 1 && moves[0]!.kind === 'pass') {
-              setTimeout(() => { mgr.move(c.code, c.playerId, moves[0]!); broadcast(c.code); handleBotTurns(c.code); }, 600);
+              setTimeout(() => { mgr.move(c.code, c.playerId, moves[0]!); broadcast(c.code); handleBotTurns(c.code); }, 1500);
             } else {
               handleBotTurns(c.code);
             }
