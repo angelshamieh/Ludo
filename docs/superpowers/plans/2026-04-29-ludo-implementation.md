@@ -1552,7 +1552,7 @@ const TRACK: Cell[] = [
   { col: 7, row: 14 }, { col: 6, row: 14 },
   { col: 6, row: 13 }, { col: 6, row: 12 }, { col: 6, row: 11 }, { col: 6, row: 10 }, { col: 6, row: 9 },
   { col: 5, row: 8 }, { col: 4, row: 8 }, { col: 3, row: 8 }, { col: 2, row: 8 }, { col: 1, row: 8 }, { col: 0, row: 8 },
-  { col: 0, row: 7 },
+  { col: 0, row: 7 }, { col: 0, row: 6 },
 ];
 
 if (TRACK.length !== 52) throw new Error(`TRACK should have 52 cells, has ${TRACK.length}`);
