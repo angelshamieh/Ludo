@@ -36,15 +36,15 @@ export const useLocalGame = create<LocalGame>((set, get) => ({
     if (moves.length === 1 && moves[0]!.kind === 'pass') {
       setTimeout(() => {
         set({ state: applyMove(get().state, { kind: 'pass' }, { now: Date.now() }) });
-        setTimeout(() => maybeBotPlay(set, get), 700);
-      }, 800); // 800ms beat so the user sees the dice value before auto-passing
+        setTimeout(() => maybeBotPlay(set, get), 1100);
+      }, 1500); // 1500ms beat so the user sees the dice value before auto-passing
       return;
     }
-    setTimeout(() => maybeBotPlay(set, get), 700);
+    setTimeout(() => maybeBotPlay(set, get), 1100);
   },
   play: (move) => {
     set({ state: applyMove(get().state, move, { now: Date.now() }) });
-    setTimeout(() => maybeBotPlay(set, get), 700);
+    setTimeout(() => maybeBotPlay(set, get), 1100);
   },
 }));
 
@@ -58,10 +58,10 @@ function maybeBotPlay(
   if (!cur?.isBot) return;
   if (!s.rolledThisTurn) {
     set({ state: applyRoll(s, 1 + Math.floor(Math.random() * 6), { now: Date.now() }) });
-    setTimeout(() => maybeBotPlay(set, get), 700);
+    setTimeout(() => maybeBotPlay(set, get), 1100);
     return;
   }
   const move = chooseBotMove(get().state);
   set({ state: applyMove(get().state, move, { now: Date.now() }) });
-  setTimeout(() => maybeBotPlay(set, get), 700);
+  setTimeout(() => maybeBotPlay(set, get), 1100);
 }

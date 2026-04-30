@@ -1,4 +1,5 @@
 'use client';
+import { ActivityLog } from '@/components/ActivityLog';
 import { Board } from '@/components/Board';
 import { Dice } from '@/components/Dice';
 import { PlayerPanel } from '@/components/PlayerPanel';
@@ -20,6 +21,7 @@ export default function Home() {
         <button className="text-sm underline" onClick={reset}>New game</button>
       </header>
       <PlayerPanel state={state} />
+      <ActivityLog state={state} />
       <Board
         state={state}
         {...(myTurn
@@ -34,7 +36,7 @@ export default function Home() {
           : {})}
       />
       <div className="fixed inset-x-0 bottom-0 px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 bg-paper border-t border-edge flex items-center justify-between">
-        <div className="text-sm">
+        <div className="text-base font-medium">
           {(() => {
             if (state.status === 'finished') {
               return `🏆 ${state.players.find((p) => p.id === state.winner)?.name} wins!`;
