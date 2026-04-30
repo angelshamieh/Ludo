@@ -162,5 +162,35 @@ export class RoomManager {
     return r.state;
   }
 
+  playAgain(code: string) {
+    const r = this.rooms.get(code);
+    if (!r || r.state.status !== 'finished') return;
+    // Keep the same players (host stays host) and re-create the lobby state.
+    // Don't use createInitialState directly because it requires 2+ players;
+    // for safety, build the state manually like createRoom does.
+    const players = r.state.players.map((p) => ({ ...p }));
+    const tokens: Record<string, typeof r.state.tokens[string]> = {};
+    for (const p of players) {
+      tokens[p.id] = Array.from({ length: 4 }, (_, i) => ({
+        id: `${p.color}-${i}`, owner: p.id, color: p.color, position: { kind: 'home' as const },
+      }));
+    }
+    r.state = {
+      code,
+      status: 'lobby',
+      players,
+      turnOrder: [],
+      currentTurn: null,
+      dice: null,
+      rolledThisTurn: false,
+      consecutiveSixes: 0,
+      tokens,
+      winner: null,
+      log: [],
+      createdAt: this.now(),
+      lastActivityAt: this.now(),
+    };
+  }
+
   chooseBotMove = chooseBotMove;
 }

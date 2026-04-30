@@ -9,6 +9,7 @@ import { PlayerPanel } from '@/components/PlayerPanel';
 import { ActivityLog } from '@/components/ActivityLog';
 import { Lobby } from '@/components/Lobby';
 import { ProfileForm } from '@/components/ProfileForm';
+import { WinScreen } from '@/components/WinScreen';
 import { legalMoves } from '@ludo/game-logic';
 
 const WS_URL = process.env.NEXT_PUBLIC_LUDO_WS ?? 'ws://localhost:8787';
@@ -76,7 +77,7 @@ export default function RoomPage() {
         <div className="text-base font-medium">
           {(() => {
             if (state.status === 'finished') {
-              return `🏆 ${state.players.find((p) => p.id === state.winner)?.name} wins!`;
+              return 'Game over';
             }
             if (!myTurn) {
               return `Waiting on ${state.players.find((p) => p.id === state.currentTurn)?.name}`;
@@ -94,6 +95,13 @@ export default function RoomPage() {
           onRoll={() => send({ type: 'roll' })}
         />
       </div>
+      {state.status === 'finished' && (
+        <WinScreen
+          state={state}
+          meIsHost={state.players.find((p) => p.id === profile.playerId)?.isHost === true}
+          onPlayAgain={() => send({ type: 'playAgain' })}
+        />
+      )}
     </main>
   );
 }

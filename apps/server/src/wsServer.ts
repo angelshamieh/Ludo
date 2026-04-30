@@ -142,6 +142,7 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
           }
           case 'move':  mgr.move(c.code, c.playerId, { kind: 'move', tokenId: parsed.tokenId }); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
           case 'pass':  mgr.move(c.code, c.playerId, { kind: 'pass' }); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
+          case 'playAgain': mgr.playAgain(c.code); broadcast(c.code); break;
           case 'leave': /* handled by close */ break;
         }
       } catch (err) {
