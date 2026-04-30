@@ -24,7 +24,7 @@ export function PlayerPanel({ state }: { state: GameState }) {
             </span>
             <div className="flex-1 min-w-0">
               <div className="font-medium truncate">{p.name}{p.isBot && ' 🤖'}</div>
-              <div className="text-xs opacity-70">{finished}/4 home</div>
+              <div className="text-xs opacity-70">{finished}/4 finished</div>
             </div>
             {!p.connected && <span title="disconnected">📡</span>}
           </li>
