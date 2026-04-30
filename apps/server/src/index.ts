@@ -39,3 +39,5 @@ const httpServer = http.createServer((req, res) => {
 
 attachWsServer(httpServer, mgr);
 httpServer.listen(port, () => console.log(`Ludo server (HTTP + WS) on :${port}`));
+
+setInterval(() => mgr.sweepExpired(), 60_000);

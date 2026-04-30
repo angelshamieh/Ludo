@@ -127,6 +127,25 @@ export class RoomManager {
     };
   }
 
+  convertToBot(code: string, playerId: string) {
+    const r = this.rooms.get(code);
+    if (!r) return;
+    r.state = {
+      ...r.state,
+      players: r.state.players.map((p) =>
+        p.id === playerId ? { ...p, isBot: true, name: `${p.name} (bot)`, connected: true } : p),
+      lastActivityAt: this.now(),
+    };
+  }
+
+  sweepExpired(thresholdMs = 10 * 60_000) {
+    const cutoff = this.now() - thresholdMs;
+    for (const [code, r] of this.rooms) {
+      const anyConnected = r.state.players.some((p) => p.connected && !p.isBot);
+      if (!anyConnected && r.state.lastActivityAt < cutoff) this.rooms.delete(code);
+    }
+  }
+
   roll(code: string, playerId: string, value: number): GameState {
     const r = this.rooms.get(code);
     if (!r) throw new Error('ROOM_NOT_FOUND');
