@@ -35,11 +35,19 @@ export default function Home() {
       />
       <div className="fixed inset-x-0 bottom-0 px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 bg-paper border-t border-edge flex items-center justify-between">
         <div className="text-sm">
-          {state.status === 'finished'
-            ? `🏆 ${state.players.find((p) => p.id === state.winner)?.name} wins!`
-            : myTurn
-              ? state.dice ? `Pick a token (rolled ${state.dice})` : 'Your turn — roll!'
-              : `Waiting on ${state.players.find((p) => p.id === state.currentTurn)?.name}`}
+          {(() => {
+            if (state.status === 'finished') {
+              return `🏆 ${state.players.find((p) => p.id === state.winner)?.name} wins!`;
+            }
+            if (!myTurn) {
+              return `Waiting on ${state.players.find((p) => p.id === state.currentTurn)?.name}`;
+            }
+            if (!state.dice) return 'Your turn — roll!';
+            if (moves.length === 1 && moves[0]!.kind === 'pass') {
+              return `Rolled ${state.dice} — no moves, passing…`;
+            }
+            return `Pick a token (rolled ${state.dice})`;
+          })()}
         </div>
         <Dice
           value={state.dice}

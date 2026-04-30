@@ -8,11 +8,16 @@ import { SAFE_ABSOLUTE_SQUARES } from '@ludo/game-logic';
 const CELL = 36;     // base cell size in SVG units
 const SIZE = CELL * 15;
 
-const colorFill: Record<Color, string> = {
+// Light pastels for the quadrant backgrounds
+const quadrantFill: Record<Color, string> = {
   red: '#e8a3a3', green: '#a3c9a8', yellow: '#f0d896', blue: '#a3b8d6',
 };
-const colorStroke: Record<Color, string> = {
-  red: '#a17070', green: '#6a8c70', yellow: '#b89c5a', blue: '#6f88aa',
+// Stronger tones for tokens — match the Tailwind theme tokens (rust/sage/honey/sky)
+const tokenFill: Record<Color, string> = {
+  red: '#c97a7a', green: '#7eaa83', yellow: '#d8b86a', blue: '#7d9ec5',
+};
+const tokenStroke: Record<Color, string> = {
+  red: '#8c5252', green: '#557560', yellow: '#9c7e3b', blue: '#516f93',
 };
 
 export function Board({ state, onTokenClick, hintTokenIds }: {
@@ -32,10 +37,10 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
       <rect x={0} y={0} width={SIZE} height={SIZE} rx={14} fill="#fdf6ec" stroke="#8b6f47" strokeWidth={2}/>
 
       {/* Color quadrants */}
-      <rect x={0}            y={0}            width={CELL*6} height={CELL*6} fill={colorFill.red}    rx={10}/>
-      <rect x={CELL*9}       y={0}            width={CELL*6} height={CELL*6} fill={colorFill.green}  rx={10}/>
-      <rect x={CELL*9}       y={CELL*9}       width={CELL*6} height={CELL*6} fill={colorFill.yellow} rx={10}/>
-      <rect x={0}            y={CELL*9}       width={CELL*6} height={CELL*6} fill={colorFill.blue}   rx={10}/>
+      <rect x={0}            y={0}            width={CELL*6} height={CELL*6} fill={quadrantFill.red}    rx={10}/>
+      <rect x={CELL*9}       y={0}            width={CELL*6} height={CELL*6} fill={quadrantFill.green}  rx={10}/>
+      <rect x={CELL*9}       y={CELL*9}       width={CELL*6} height={CELL*6} fill={quadrantFill.yellow} rx={10}/>
+      <rect x={0}            y={CELL*9}       width={CELL*6} height={CELL*6} fill={quadrantFill.blue}   rx={10}/>
 
       {/* Track squares */}
       {BOARD_TRACK.map((c, abs) => (
@@ -56,16 +61,16 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
             x={c.col*CELL+1} y={c.row*CELL+1}
             width={CELL-2} height={CELL-2}
             rx={6}
-            fill={colorFill[color]} stroke={colorStroke[color]} strokeWidth={1} opacity={0.85}
+            fill={quadrantFill[color]} stroke={tokenStroke[color]} strokeWidth={1} opacity={0.85}
           />
         ))
       ))}
 
       {/* Center finish (4 colored triangles) */}
-      <polygon points={`${CENTER.col*CELL},${CENTER.row*CELL} ${(CENTER.col+1)*CELL},${CENTER.row*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={colorFill.red} stroke={colorStroke.red}/>
-      <polygon points={`${(CENTER.col+1)*CELL},${CENTER.row*CELL} ${(CENTER.col+1)*CELL},${(CENTER.row+1)*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={colorFill.green} stroke={colorStroke.green}/>
-      <polygon points={`${(CENTER.col+1)*CELL},${(CENTER.row+1)*CELL} ${CENTER.col*CELL},${(CENTER.row+1)*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={colorFill.yellow} stroke={colorStroke.yellow}/>
-      <polygon points={`${CENTER.col*CELL},${(CENTER.row+1)*CELL} ${CENTER.col*CELL},${CENTER.row*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={colorFill.blue} stroke={colorStroke.blue}/>
+      <polygon points={`${CENTER.col*CELL},${CENTER.row*CELL} ${(CENTER.col+1)*CELL},${CENTER.row*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={quadrantFill.red} stroke={tokenStroke.red}/>
+      <polygon points={`${(CENTER.col+1)*CELL},${CENTER.row*CELL} ${(CENTER.col+1)*CELL},${(CENTER.row+1)*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={quadrantFill.green} stroke={tokenStroke.green}/>
+      <polygon points={`${(CENTER.col+1)*CELL},${(CENTER.row+1)*CELL} ${CENTER.col*CELL},${(CENTER.row+1)*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={quadrantFill.yellow} stroke={tokenStroke.yellow}/>
+      <polygon points={`${CENTER.col*CELL},${(CENTER.row+1)*CELL} ${CENTER.col*CELL},${CENTER.row*CELL} ${(CENTER.col+0.5)*CELL},${(CENTER.row+0.5)*CELL}`} fill={quadrantFill.blue} stroke={tokenStroke.blue}/>
 
       {/* Home circles (the 4 nests) */}
       {(['red','green','yellow','blue'] as const).map((color) => (
@@ -73,7 +78,7 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
           <circle key={`hs-${color}-${i}`}
             cx={c.col*CELL + CELL/2} cy={c.row*CELL + CELL/2}
             r={CELL*0.45}
-            fill="#fff" stroke={colorStroke[color]} strokeWidth={1.5}/>
+            fill="#fff" stroke={tokenStroke[color]} strokeWidth={1.5}/>
         ))
       ))}
 
@@ -91,8 +96,8 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
             {/* extended invisible hit-area for mobile */}
             <circle cx={cx} cy={cy} r={CELL*0.7} fill="transparent" />
             <circle
-              cx={cx} cy={cy} r={CELL*0.32}
-              fill={colorFill[t.color]} stroke={colorStroke[t.color]} strokeWidth={2}
+              cx={cx} cy={cy} r={CELL*0.36}
+              fill={tokenFill[t.color]} stroke={tokenStroke[t.color]} strokeWidth={2}
             />
             {isHinted && (
               <circle cx={cx} cy={cy} r={CELL*0.42} fill="none" stroke="#3a2e1f" strokeWidth={2}

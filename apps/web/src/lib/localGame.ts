@@ -1,7 +1,7 @@
 'use client';
 import { create } from 'zustand';
 import {
-  createInitialState, startGame, applyRoll, applyMove, chooseBotMove,
+  createInitialState, startGame, applyRoll, applyMove, chooseBotMove, legalMoves,
   type GameState, type Player, type Move,
 } from '@ludo/game-logic';
 
@@ -29,7 +29,17 @@ export const useLocalGame = create<LocalGame>((set, get) => ({
     const s = get().state;
     if (s.rolledThisTurn || s.status !== 'playing' || s.currentTurn === null) return;
     const v = rollDie();
-    set({ state: applyRoll(s, v, { now: Date.now() }) });
+    const next = applyRoll(s, v, { now: Date.now() });
+    set({ state: next });
+    // If after rolling, the player has no legal moves (only forced pass), auto-pass
+    const moves = legalMoves(next, next.currentTurn!);
+    if (moves.length === 1 && moves[0]!.kind === 'pass') {
+      setTimeout(() => {
+        set({ state: applyMove(get().state, { kind: 'pass' }, { now: Date.now() }) });
+        setTimeout(() => maybeBotPlay(set, get), 700);
+      }, 800); // 800ms beat so the user sees the dice value before auto-passing
+      return;
+    }
     setTimeout(() => maybeBotPlay(set, get), 700);
   },
   play: (move) => {
