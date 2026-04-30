@@ -93,16 +93,30 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
              onClick={onTokenClick ? () => onTokenClick(t.id) : undefined}
              style={{ cursor: onTokenClick ? 'pointer' : 'default' }}
           >
-            {/* extended invisible hit-area for mobile */}
+            {/* Extended invisible hit-area for mobile taps */}
             <circle cx={cx} cy={cy} r={CELL*0.7} fill="transparent" />
+
+            {/* Hint glow halo (pulses opacity behind the token) */}
+            {isHinted && (
+              <circle cx={cx} cy={cy} r={CELL*0.55} fill="#fbbf24" opacity={0.35}>
+                <animate attributeName="opacity" values="0.15;0.55;0.15" dur="1.2s" repeatCount="indefinite"/>
+                <animate attributeName="r" values={`${CELL*0.5};${CELL*0.6};${CELL*0.5}`} dur="1.2s" repeatCount="indefinite"/>
+              </circle>
+            )}
+
+            {/* The token itself */}
             <circle
               cx={cx} cy={cy} r={CELL*0.36}
               fill={tokenFill[t.color]} stroke={tokenStroke[t.color]} strokeWidth={2}
             />
+
+            {/* Bright amber dashed ring on top of the halo when hinted */}
             {isHinted && (
-              <circle cx={cx} cy={cy} r={CELL*0.42} fill="none" stroke="#3a2e1f" strokeWidth={2}
-                strokeDasharray="4 3">
-                <animate attributeName="stroke-dashoffset" from="0" to="14" dur="0.8s" repeatCount="indefinite"/>
+              <circle cx={cx} cy={cy} r={CELL*0.46} fill="none"
+                stroke="#f59e0b" strokeWidth={3.5}
+                strokeDasharray="5 4"
+                strokeLinecap="round">
+                <animate attributeName="stroke-dashoffset" from="0" to="18" dur="1s" repeatCount="indefinite"/>
               </circle>
             )}
           </g>
