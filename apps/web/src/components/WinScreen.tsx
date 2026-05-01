@@ -1,5 +1,6 @@
 'use client';
 import type { GameState } from '@ludo/game-logic-ludo';
+import { Confetti } from '@/components/visual/Confetti';
 
 export function WinScreen({ state, onPlayAgain, meIsHost }: {
   state: GameState;
@@ -10,6 +11,7 @@ export function WinScreen({ state, onPlayAgain, meIsHost }: {
   if (!winner) return null;
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-10">
+      <Confetti winnerColor={winner.color} />
       <div className="bg-paper rounded-2xl p-6 flex flex-col items-center gap-4 max-w-sm w-full shadow-2xl">
         <div className="text-6xl">🏆</div>
         <h2 className="font-display text-3xl text-center">{winner.name} wins!</h2>
