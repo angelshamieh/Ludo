@@ -6,9 +6,10 @@ import { createRoom } from '@/lib/createRoom';
 
 export default function NewTicTacToePage() {
   const router = useRouter();
-  const { profile } = useLocalProfile();
+  const { profile, loaded } = useLocalProfile();
 
   useEffect(() => {
+    if (!loaded) return;
     if (!profile) {
       router.replace('/');
       return;
@@ -18,7 +19,7 @@ export default function NewTicTacToePage() {
       .then((code) => { if (!cancelled) router.replace(`/tictactoe/${code}`); })
       .catch((err) => { console.error(err); if (!cancelled) router.replace('/'); });
     return () => { cancelled = true; };
-  }, [profile, router]);
+  }, [profile, loaded, router]);
 
   return (
     <main className="min-h-screen-d flex items-center justify-center">
