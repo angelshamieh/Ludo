@@ -66,6 +66,13 @@ export default function Home() {
           accent="bg-sky/25"
           icon="🐍"
         />
+        <GameCard
+          href="/tictactoe/new"
+          name="Tic-Tac-Toe"
+          tagline="Three in a row"
+          accent="bg-honey/25"
+          icon="❌"
+        />
       </section>
 
       <section className="w-full max-w-sm flex flex-col gap-2">
