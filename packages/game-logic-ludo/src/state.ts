@@ -27,6 +27,7 @@ export function createInitialState(input: CreateInitialStateInput): GameState {
   }
   return {
     code,
+    gameType: 'ludo',
     status: 'lobby',
     // Defensive shallow copy — caller may keep mutating their array (e.g. lobby seat changes)
     players: [...players],

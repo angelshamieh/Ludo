@@ -42,6 +42,7 @@ export type GameEvent =
 
 export type GameState = {
   code: string;                 // 4-letter room code, e.g. "ABCD"
+  gameType: 'ludo';
   status: GameStatus;
   players: Player[];
   turnOrder: string[];          // playerIds in seating order

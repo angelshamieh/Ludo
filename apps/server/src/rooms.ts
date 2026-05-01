@@ -1,10 +1,11 @@
 import {
-  startGame, applyRoll, applyMove, chooseBotMove,
   COLORS, type Color, type GameState, type Move, type Player, type Token,
 } from '@ludo/game-logic-ludo';
+import { getEngine } from './engines/index';
 
 export type Room = {
   code: string;
+  gameType: import('@ludo/game-shared').GameType;
   state: GameState;
   /** Map of playerId → set of socket "send" callbacks */
   listeners: Map<string, Set<(s: GameState) => void>>;
@@ -21,7 +22,13 @@ export class RoomManager {
   private rooms = new Map<string, Room>();
   constructor(private now: () => number = () => Date.now()) {}
 
-  createRoom(args: { hostId: string; hostName: string; hostAvatar: string }): string {
+  createRoom(args: {
+    hostId: string;
+    hostName: string;
+    hostAvatar: string;
+    gameType?: import('@ludo/game-shared').GameType;
+  }): string {
+    const gameType = args.gameType ?? 'ludo';
     let code = code4();
     while (this.rooms.has(code)) code = code4();
     const host: Player = {
@@ -29,6 +36,7 @@ export class RoomManager {
       color: 'red', isBot: false, isHost: true, connected: true,
     };
     // Build lobby state directly — game-logic's createInitialState requires 2+ players.
+    // The lobby state has Ludo-shaped tokens (the engine recreates it at start time anyway).
     const tokens: Record<string, Token[]> = {
       [host.id]: Array.from({ length: 4 }, (_, i) => ({
         id: `${host.color}-${i}`, owner: host.id, color: host.color, position: { kind: 'home' as const },
@@ -37,6 +45,7 @@ export class RoomManager {
     const now = this.now();
     const state: GameState = {
       code,
+      gameType: 'ludo',
       status: 'lobby',
       players: [host],
       turnOrder: [],
@@ -50,7 +59,7 @@ export class RoomManager {
       createdAt: now,
       lastActivityAt: now,
     };
-    this.rooms.set(code, { code, state, listeners: new Map() });
+    this.rooms.set(code, { code, gameType, state, listeners: new Map() });
     return code;
   }
 
@@ -113,7 +122,13 @@ export class RoomManager {
     if (!r) throw new Error('ROOM_NOT_FOUND');
     const host = r.state.players.find((p) => p.id === hostId);
     if (!host?.isHost) throw new Error('NOT_HOST');
-    r.state = startGame(r.state, { now: this.now() });
+    const engine = getEngine(r.gameType);
+    // Recreate state via the engine to get the right per-game shape.
+    // Carry over the players from the lobby.
+    const players = r.state.players;
+    let state = engine.createInitialState({ code, players, now: this.now() }) as GameState;
+    state = engine.startGame(state, { now: this.now() }) as GameState;
+    r.state = state;
     return r.state;
   }
 
@@ -150,15 +165,17 @@ export class RoomManager {
     const r = this.rooms.get(code);
     if (!r) throw new Error('ROOM_NOT_FOUND');
     if (r.state.currentTurn !== playerId) throw new Error('NOT_YOUR_TURN');
-    r.state = applyRoll(r.state, value, { now: this.now() });
+    const engine = getEngine(r.gameType);
+    r.state = engine.applyRoll(r.state, value, { now: this.now() }) as GameState;
     return r.state;
   }
 
-  move(code: string, playerId: string, move: Move): GameState {
+  move(code: string, playerId: string, move: Move | unknown): GameState {
     const r = this.rooms.get(code);
     if (!r) throw new Error('ROOM_NOT_FOUND');
     if (r.state.currentTurn !== playerId) throw new Error('NOT_YOUR_TURN');
-    r.state = applyMove(r.state, move, { now: this.now() });
+    const engine = getEngine(r.gameType);
+    r.state = engine.applyMove(r.state, move, { now: this.now() }) as GameState;
     return r.state;
   }
 
@@ -177,6 +194,7 @@ export class RoomManager {
     }
     r.state = {
       code,
+      gameType: 'ludo',
       status: 'lobby',
       players,
       turnOrder: [],
@@ -192,5 +210,8 @@ export class RoomManager {
     };
   }
 
-  chooseBotMove = chooseBotMove;
+  chooseBotMove = (state: GameState) => {
+    const engine = getEngine(state.gameType);
+    return engine.chooseBotMove(state) as Move;
+  };
 }
