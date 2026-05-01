@@ -23,9 +23,12 @@ importers:
 
   apps/server:
     dependencies:
-      '@ludo/game-logic':
+      '@ludo/game-logic-ludo':
         specifier: workspace:*
-        version: link:../../packages/game-logic
+        version: link:../../packages/game-logic-ludo
+      '@ludo/game-shared':
+        specifier: workspace:*
+        version: link:../../packages/game-shared
       ws:
         specifier: '8'
         version: 8.20.0
@@ -48,9 +51,12 @@ importers:
 
   apps/web:
     dependencies:
-      '@ludo/game-logic':
+      '@ludo/game-logic-ludo':
         specifier: workspace:*
-        version: link:../../packages/game-logic
+        version: link:../../packages/game-logic-ludo
+      '@ludo/game-shared':
+        specifier: workspace:*
+        version: link:../../packages/game-shared
       next:
         specifier: 16.2.4
         version: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -98,7 +104,11 @@ importers:
         specifier: ^5
         version: 5.5.4
 
-  packages/game-logic:
+  packages/game-logic-ludo:
+    dependencies:
+      '@ludo/game-shared':
+        specifier: workspace:*
+        version: link:../game-shared
     devDependencies:
       typescript:
         specifier: '5.5'
@@ -106,6 +116,12 @@ importers:
       vitest:
         specifier: '2'
         version: 2.1.9(@types/node@20.19.39)(jsdom@29.1.0)(lightningcss@1.32.0)(terser@5.46.2)
+
+  packages/game-shared:
+    devDependencies:
+      typescript:
+        specifier: '5.5'
+        version: 5.5.4
 
 packages:
 

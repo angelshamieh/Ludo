@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ludo/game-logic-ludo": "workspace:*",
+    "@ludo/game-shared": "workspace:*",
     "ws": "8",
     "zod": "3"
   },
