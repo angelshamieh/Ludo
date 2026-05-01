@@ -8,7 +8,7 @@ const mgr = new RoomManager();
 
 const httpServer = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', corsOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'content-type');
   if (req.method === 'OPTIONS') return res.end();
 
@@ -17,13 +17,15 @@ const httpServer = http.createServer((req, res) => {
     req.on('data', (c) => (body += c));
     req.on('end', () => {
       try {
-        const { hostId, name, avatar } = JSON.parse(body || '{}');
+        const { hostId, name, avatar, gameType } = JSON.parse(body || '{}');
         if (!hostId || !name) {
           res.statusCode = 400; res.end(JSON.stringify({ error: 'missing fields' })); return;
         }
-        const code = mgr.createRoom({ hostId, hostName: name, hostAvatar: avatar ?? '🐱' });
+        const validGameTypes = ['ludo', 'snakes'];
+        const game = (gameType && validGameTypes.includes(gameType)) ? gameType : 'ludo';
+        const code = mgr.createRoom({ hostId, hostName: name, hostAvatar: avatar ?? '🐱', gameType: game });
         res.setHeader('content-type', 'application/json');
-        res.end(JSON.stringify({ code }));
+        res.end(JSON.stringify({ code, gameType: game }));
       } catch (err) {
         res.statusCode = 500; res.end(JSON.stringify({ error: String(err) }));
       }
@@ -32,6 +34,19 @@ const httpServer = http.createServer((req, res) => {
   }
   if (req.method === 'GET' && req.url === '/health') {
     res.end('ok');
+    return;
+  }
+  const roomMatch = req.url?.match(/^\/rooms\/([A-Z]{4})$/);
+  if (req.method === 'GET' && roomMatch) {
+    const code = roomMatch[1]!;
+    const r = mgr.getRoom(code);
+    if (!r) {
+      res.statusCode = 404;
+      res.end(JSON.stringify({ error: 'not found' }));
+      return;
+    }
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ code, gameType: r.gameType }));
     return;
   }
   res.statusCode = 404; res.end();
