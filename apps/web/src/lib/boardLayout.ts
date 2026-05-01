@@ -1,5 +1,5 @@
-import type { Color, Token } from '@ludo/game-logic';
-import { trackAbsolute } from '@ludo/game-logic';
+import type { Color, Token } from '@ludo/game-logic-ludo';
+import { trackAbsolute } from '@ludo/game-logic-ludo';
 
 export type Cell = { col: number; row: number };
 

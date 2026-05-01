@@ -1,5 +1,5 @@
 'use client';
-import type { GameState } from '@ludo/game-logic';
+import type { GameState } from '@ludo/game-logic-ludo';
 
 const colorBg: Record<string, string> = {
   red: 'bg-rust', green: 'bg-sage', yellow: 'bg-honey', blue: 'bg-sky',

@@ -12,7 +12,7 @@
     "lint": "echo skip"
   },
   "dependencies": {
-    "@ludo/game-logic": "workspace:*",
+    "@ludo/game-logic-ludo": "workspace:*",
     "ws": "8",
     "zod": "3"
   },

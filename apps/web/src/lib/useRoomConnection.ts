@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import type { GameState } from '@ludo/game-logic';
+import type { GameState } from '@ludo/game-logic-ludo';
 
 export type ConnectionStatus = 'connecting' | 'open' | 'closed' | 'reconnecting';
 

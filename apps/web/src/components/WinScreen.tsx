@@ -1,5 +1,5 @@
 'use client';
-import type { GameState } from '@ludo/game-logic';
+import type { GameState } from '@ludo/game-logic-ludo';
 
 export function WinScreen({ state, onPlayAgain, meIsHost }: {
   state: GameState;

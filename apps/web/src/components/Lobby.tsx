@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { GameState } from '@ludo/game-logic';
+import type { GameState } from '@ludo/game-logic-ludo';
 
 export function Lobby({ state, meId, shareUrl, onAddBot, onStart }: {
   state: GameState;

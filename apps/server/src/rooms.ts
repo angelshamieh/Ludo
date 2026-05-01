@@ -1,7 +1,7 @@
 import {
   startGame, applyRoll, applyMove, chooseBotMove,
   COLORS, type Color, type GameState, type Move, type Player, type Token,
-} from '@ludo/game-logic';
+} from '@ludo/game-logic-ludo';
 
 export type Room = {
   code: string;

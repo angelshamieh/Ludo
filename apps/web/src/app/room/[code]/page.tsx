@@ -11,7 +11,7 @@ import { ActivityLog } from '@/components/ActivityLog';
 import { Lobby } from '@/components/Lobby';
 import { ProfileForm } from '@/components/ProfileForm';
 import { WinScreen } from '@/components/WinScreen';
-import { legalMoves } from '@ludo/game-logic';
+import { legalMoves } from '@ludo/game-logic-ludo';
 
 const WS_URL = process.env.NEXT_PUBLIC_LUDO_WS ?? 'ws://localhost:8787';
 

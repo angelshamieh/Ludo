@@ -1,5 +1,5 @@
 'use client';
-import type { GameState } from '@ludo/game-logic';
+import type { GameState } from '@ludo/game-logic-ludo';
 
 const eventIcon = (e: GameState['log'][number]): string => {
   switch (e.kind) {

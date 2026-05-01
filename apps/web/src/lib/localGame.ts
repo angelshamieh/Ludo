@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import {
   createInitialState, startGame, applyRoll, applyMove, chooseBotMove, legalMoves,
   type GameState, type Player, type Move,
-} from '@ludo/game-logic';
+} from '@ludo/game-logic-ludo';
 
 const seedPlayers = (): Player[] => ([
   { id: 'me',   name: 'You',  avatar: '🐱', color: 'red',    isBot: false, isHost: true,  connected: true },

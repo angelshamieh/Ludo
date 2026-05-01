@@ -2,7 +2,7 @@ import type { Server } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { ClientMessage, type ServerMessage } from './protocol';
 import { RoomManager } from './rooms';
-import { rollDie, legalMoves } from '@ludo/game-logic';
+import { rollDie, legalMoves } from '@ludo/game-logic-ludo';
 
 /**
  * Attaches a WebSocket server to an existing http.Server so HTTP and WS share one port.
