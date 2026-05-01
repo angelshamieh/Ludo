@@ -2,11 +2,12 @@ import type { GameType } from '@ludo/game-shared';
 import type { GameEngine } from './types';
 import { ludoEngine } from './ludo';
 import { snakesEngine } from './snakes';
+import { tictactoeEngine } from './tictactoe';
 
-const ENGINES: Partial<Record<GameType, GameEngine>> = {
+const ENGINES: Record<GameType, GameEngine> = {
   ludo: ludoEngine,
   snakes: snakesEngine,
-  // tictactoe registered in Phase 3
+  tictactoe: tictactoeEngine,
 };
 
 export function getEngine(gameType: GameType): GameEngine {

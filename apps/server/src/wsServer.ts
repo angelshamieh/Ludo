@@ -84,6 +84,14 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
         armAfk(code);
         return;
       }
+      if (room.gameType === 'tictactoe') {
+        // Tic-Tac-Toe: bots don't roll. Just choose a move.
+        const move = mgr.chooseBotMove(room.state);
+        mgr.move(code, cur.id, move);
+        broadcast(code);
+        setTimeout(step, BOT_STEP_MS);
+        return;
+      }
       if (!room.state.rolledThisTurn) {
         mgr.roll(code, cur.id, rollDie());
         broadcast(code);
@@ -127,9 +135,12 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
           case 'addBot': mgr.addBot(c.code, c.playerId); broadcast(c.code); break;
           case 'start':  mgr.start(c.code, c.playerId);  broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
           case 'roll': {
+            const room = mgr.getRoom(c.code)!;
+            if (room.gameType === 'tictactoe') {
+              return sendError(socket, 'NO_DICE', 'tic-tac-toe has no dice');
+            }
             mgr.roll(c.code, c.playerId, rollDie());
             broadcast(c.code);
-            const room = mgr.getRoom(c.code)!;
             if (room.gameType === 'snakes') {
               // S&L: always exactly one legal move after a roll. Auto-resolve.
               setTimeout(() => {
@@ -153,6 +164,10 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
           case 'move':  mgr.move(c.code, c.playerId, { kind: 'move', tokenId: parsed.tokenId }); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
           case 'pass':  mgr.move(c.code, c.playerId, { kind: 'pass' }); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
           case 'playAgain': mgr.playAgain(c.code); broadcast(c.code); break;
+          case 'setDifficulty':
+            mgr.setDifficulty(c.code, c.playerId, parsed.value);
+            broadcast(c.code);
+            break;
           case 'leave': /* handled by close */ break;
         }
       } catch (err) {

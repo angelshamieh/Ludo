@@ -8,6 +8,7 @@ export const ClientMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('move'),       tokenId: z.string() }),
   z.object({ type: z.literal('pass') }),
   z.object({ type: z.literal('playAgain') }),
+  z.object({ type: z.literal('setDifficulty'), value: z.enum(['easy', 'hard']) }),
   z.object({ type: z.literal('leave') }),
 ]);
 export type ClientMessage = z.infer<typeof ClientMessage>;

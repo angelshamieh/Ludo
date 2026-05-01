@@ -18,6 +18,12 @@ const code4 = (): string => {
   return s;
 };
 
+const MAX_SEATS: Record<import('@ludo/game-shared').GameType, number> = {
+  ludo: 4,
+  snakes: 4,
+  tictactoe: 2,
+};
+
 export class RoomManager {
   private rooms = new Map<string, Room>();
   constructor(private now: () => number = () => Date.now()) {}
@@ -83,7 +89,7 @@ export class RoomManager {
       return r.state;
     }
     if (r.state.status !== 'lobby') throw new Error('GAME_IN_PROGRESS');
-    if (r.state.players.length >= 4) throw new Error('ROOM_FULL');
+    if (r.state.players.length >= MAX_SEATS[r.gameType]) throw new Error('ROOM_FULL');
     const color = this.nextFreeColor(r.state);
     const player: Player = {
       id: args.playerId, name: args.name, avatar: args.avatar,
@@ -103,7 +109,7 @@ export class RoomManager {
     const host = r.state.players.find((p) => p.id === hostId);
     if (!host?.isHost) throw new Error('NOT_HOST');
     if (r.state.status !== 'lobby') throw new Error('GAME_IN_PROGRESS');
-    if (r.state.players.length >= 4) throw new Error('ROOM_FULL');
+    if (r.state.players.length >= MAX_SEATS[r.gameType]) throw new Error('ROOM_FULL');
     const color = this.nextFreeColor(r.state);
     const bot: Player = {
       id: `bot-${color}`, name: `Bot ${color}`, avatar: '🤖',
@@ -177,6 +183,16 @@ export class RoomManager {
     const engine = getEngine(r.gameType);
     r.state = engine.applyMove(r.state, move, { now: this.now() }) as GameState;
     return r.state;
+  }
+
+  setDifficulty(code: string, hostId: string, value: 'easy' | 'hard') {
+    const r = this.rooms.get(code);
+    if (!r) throw new Error('ROOM_NOT_FOUND');
+    if (r.gameType !== 'tictactoe') throw new Error('NOT_TICTACTOE');
+    const host = r.state.players.find((p) => p.id === hostId);
+    if (!host?.isHost) throw new Error('NOT_HOST');
+    if (r.state.status !== 'lobby') throw new Error('GAME_IN_PROGRESS');
+    r.state = { ...r.state, difficulty: value, lastActivityAt: this.now() } as never;
   }
 
   playAgain(code: string) {
