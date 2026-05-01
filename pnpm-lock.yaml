@@ -117,6 +117,19 @@ importers:
         specifier: '2'
         version: 2.1.9(@types/node@20.19.39)(jsdom@29.1.0)(lightningcss@1.32.0)(terser@5.46.2)
 
+  packages/game-logic-snakes:
+    dependencies:
+      '@ludo/game-shared':
+        specifier: workspace:*
+        version: link:../game-shared
+    devDependencies:
+      typescript:
+        specifier: '5.5'
+        version: 5.5.4
+      vitest:
+        specifier: '2'
+        version: 2.1.9(@types/node@20.19.39)(jsdom@29.1.0)(lightningcss@1.32.0)(terser@5.46.2)
+
   packages/game-shared:
     devDependencies:
       typescript:
