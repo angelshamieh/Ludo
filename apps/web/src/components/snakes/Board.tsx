@@ -4,6 +4,7 @@ import { LADDERS, SNAKES } from '@ludo/game-logic-snakes';
 import { squareToCell } from '@/lib/snakes/boardLayout';
 import { Pawn } from '@/components/visual/Pawn';
 import { SnakeArt } from '@/components/visual/SnakeArt';
+import { LadderArt } from '@/components/visual/LadderArt';
 
 const CELL = 40;
 const SIZE = CELL * 10;
@@ -38,10 +39,10 @@ export function SnakesBoard({ state }: { state: GameState }) {
         const a = squareToCell(Number(bottom));
         const b = squareToCell(top);
         return (
-          <line key={`l-${bottom}`}
+          <LadderArt key={`l-${bottom}`}
             x1={a.col*CELL + CELL/2} y1={a.row*CELL + CELL/2}
             x2={b.col*CELL + CELL/2} y2={b.row*CELL + CELL/2}
-            stroke="#8b6f47" strokeWidth={3} strokeLinecap="round"/>
+          />
         );
       })}
 
