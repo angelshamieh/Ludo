@@ -88,3 +88,13 @@ export function applyMove(
     log,
   };
 }
+
+export function legalMoves(state: GameState, playerId: string): Move[] {
+  if (state.currentTurn !== playerId) return [];
+  if (state.dice == null || !state.rolledThisTurn) return [];
+  return [{ kind: 'auto' }];
+}
+
+export function chooseBotMove(_state: GameState): Move {
+  return { kind: 'auto' };
+}

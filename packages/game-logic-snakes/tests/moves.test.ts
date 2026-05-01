@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, startGame, applyRoll, applyMove, isWin, type GameState, type Player } from '../src/index';
+import { createInitialState, startGame, applyRoll, applyMove, isWin, legalMoves, chooseBotMove, type GameState, type Player } from '../src/index';
 
 const players: Player[] = [
   { id: 'a', name: 'A', avatar: '🐱', color: 'red',   isBot: false, isHost: true,  connected: true },
@@ -82,5 +82,27 @@ describe('applyMove (snakes)', () => {
     let s = setToken(fresh(), 'a', 100);
     expect(isWin(s, 'a')).toBe(true);
     expect(isWin(s, 'b')).toBe(false);
+  });
+});
+
+describe('legalMoves + chooseBotMove (snakes)', () => {
+  it('legalMoves is empty before rolling', () => {
+    const s = fresh();
+    expect(legalMoves(s, 'a')).toEqual([]);
+  });
+
+  it('legalMoves returns auto after roll', () => {
+    const s = applyRoll(fresh(), 3, { now: 1 });
+    expect(legalMoves(s, 'a')).toEqual([{ kind: 'auto' }]);
+  });
+
+  it('legalMoves is empty for the non-current player', () => {
+    const s = applyRoll(fresh(), 3, { now: 1 });
+    expect(legalMoves(s, 'b')).toEqual([]);
+  });
+
+  it('chooseBotMove always returns auto', () => {
+    const s = applyRoll(fresh(), 4, { now: 1 });
+    expect(chooseBotMove(s)).toEqual({ kind: 'auto' });
   });
 });
