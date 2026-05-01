@@ -21,7 +21,7 @@ const httpServer = http.createServer((req, res) => {
         if (!hostId || !name) {
           res.statusCode = 400; res.end(JSON.stringify({ error: 'missing fields' })); return;
         }
-        const validGameTypes = ['ludo', 'snakes'];
+        const validGameTypes = ['ludo', 'snakes', 'tictactoe'];
         const game = (gameType && validGameTypes.includes(gameType)) ? gameType : 'ludo';
         const code = mgr.createRoom({ hostId, hostName: name, hostAvatar: avatar ?? '🐱', gameType: game });
         res.setHeader('content-type', 'application/json');
