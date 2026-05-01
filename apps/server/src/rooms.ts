@@ -71,8 +71,13 @@ export class RoomManager {
 
   getRoom(code: string): Room | undefined { return this.rooms.get(code); }
 
-  private nextFreeColor(state: GameState): Color {
+  private nextFreeColor(state: GameState, gameType: import('@ludo/game-shared').GameType): Color {
     const used = new Set(state.players.map((p) => p.color));
+    // Tic-Tac-Toe is X (red, host) vs O (blue) — skip green/yellow.
+    if (gameType === 'tictactoe') {
+      const order: Color[] = ['red', 'blue'];
+      return order.find((c) => !used.has(c))!;
+    }
     return COLORS.find((c) => !used.has(c))!;
   }
 
@@ -90,7 +95,7 @@ export class RoomManager {
     }
     if (r.state.status !== 'lobby') throw new Error('GAME_IN_PROGRESS');
     if (r.state.players.length >= MAX_SEATS[r.gameType]) throw new Error('ROOM_FULL');
-    const color = this.nextFreeColor(r.state);
+    const color = this.nextFreeColor(r.state, r.gameType);
     const player: Player = {
       id: args.playerId, name: args.name, avatar: args.avatar,
       color, isBot: false, isHost: false, connected: true,
@@ -110,7 +115,7 @@ export class RoomManager {
     if (!host?.isHost) throw new Error('NOT_HOST');
     if (r.state.status !== 'lobby') throw new Error('GAME_IN_PROGRESS');
     if (r.state.players.length >= MAX_SEATS[r.gameType]) throw new Error('ROOM_FULL');
-    const color = this.nextFreeColor(r.state);
+    const color = this.nextFreeColor(r.state, r.gameType);
     const bot: Player = {
       id: `bot-${color}`, name: `Bot ${color}`, avatar: '🤖',
       color, isBot: true, isHost: false, connected: true,

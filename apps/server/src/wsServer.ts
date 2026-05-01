@@ -161,7 +161,17 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
             }
             break;
           }
-          case 'move':  mgr.move(c.code, c.playerId, { kind: 'move', tokenId: parsed.tokenId }); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
+          case 'move': {
+            const room = mgr.getRoom(c.code)!;
+            const move = room.gameType === 'tictactoe'
+              ? { kind: 'place', cell: parseInt(parsed.tokenId, 10) }
+              : { kind: 'move', tokenId: parsed.tokenId };
+            mgr.move(c.code, c.playerId, move);
+            broadcast(c.code);
+            handleBotTurns(c.code);
+            armAfk(c.code);
+            break;
+          }
           case 'pass':  mgr.move(c.code, c.playerId, { kind: 'pass' }); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); break;
           case 'playAgain': mgr.playAgain(c.code); broadcast(c.code); break;
           case 'setDifficulty':
