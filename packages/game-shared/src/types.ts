@@ -1,4 +1,4 @@
-export type GameType = 'ludo' | 'snakes';
+export type GameType = 'ludo' | 'snakes' | 'tictactoe';
 
 export type Color = 'red' | 'green' | 'blue' | 'yellow';
 

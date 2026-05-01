@@ -3,9 +3,10 @@ import type { GameEngine } from './types';
 import { ludoEngine } from './ludo';
 import { snakesEngine } from './snakes';
 
-const ENGINES: Record<GameType, GameEngine> = {
+const ENGINES: Partial<Record<GameType, GameEngine>> = {
   ludo: ludoEngine,
   snakes: snakesEngine,
+  // tictactoe registered in Phase 3
 };
 
 export function getEngine(gameType: GameType): GameEngine {
