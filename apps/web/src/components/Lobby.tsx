@@ -2,12 +2,13 @@
 import { useState } from 'react';
 import type { GameState } from '@ludo/game-logic-ludo';
 
-export function Lobby({ state, meId, shareUrl, onAddBot, onStart }: {
+export function Lobby({ state, meId, shareUrl, onAddBot, onStart, extras }: {
   state: GameState;
   meId: string;
   shareUrl: string;
   onAddBot: () => void;
   onStart: () => void;
+  extras?: React.ReactNode;
 }) {
   const me = state.players.find((p) => p.id === meId);
   const canStart = me?.isHost && state.players.length >= 2;
@@ -66,6 +67,7 @@ export function Lobby({ state, meId, shareUrl, onAddBot, onStart }: {
       </ul>
 
       {canAddBot && <button onClick={onAddBot} className="w-full py-3 rounded-xl border-2 border-ink">Add a bot</button>}
+      {extras && <div className="w-full">{extras}</div>}
       {canStart && <button onClick={onStart} className="w-full py-4 rounded-xl bg-ink text-paper text-lg">Start game</button>}
       {!canStart && me?.isHost && <p className="opacity-60 text-sm">At least 2 players are needed to start.</p>}
     </div>
