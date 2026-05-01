@@ -1,36 +1,96 @@
 'use client';
-import { useLocalSnakes } from '@/lib/snakes/localGame';
+import { useParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useLocalProfile } from '@/lib/useLocalProfile';
+import { useRoomConnection } from '@/lib/useRoomConnection';
 import { SnakesBoard } from '@/components/snakes/Board';
 import { Dice } from '@/components/Dice';
 import { PlayerPanel } from '@/components/PlayerPanel';
+import { ActivityLog } from '@/components/ActivityLog';
+import { Lobby } from '@/components/Lobby';
+import { ProfileForm } from '@/components/ProfileForm';
+import { WinScreen } from '@/components/WinScreen';
+import { Buzz } from '@/lib/haptics';
+import type { GameState as SnakesGameState } from '@ludo/game-logic-snakes';
 
-export default function SnakesPage() {
-  const { state, roll, reset } = useLocalSnakes();
-  const myId = 'me';
-  const myTurn = state.currentTurn === myId;
+const WS_URL = process.env.NEXT_PUBLIC_LUDO_WS ?? 'ws://localhost:8787';
+
+export default function SnakesRoomPage() {
+  const { code } = useParams<{ code: string }>();
+  const { profile, save } = useLocalProfile();
+  const { state, status, error, send } = useRoomConnection({ wsUrl: WS_URL, code, profile });
+  const myTurn = !!profile && state?.currentTurn === profile.playerId;
+
+  const lastLogLen = useRef(0);
+  useEffect(() => {
+    if (!state || !profile) return;
+    const newEvents = state.log.slice(lastLogLen.current);
+    lastLogLen.current = state.log.length;
+    for (const e of newEvents) {
+      if (e.kind === 'won' && e.playerId === profile.playerId) Buzz.win();
+      if (e.kind === 'turn' && e.playerId === profile.playerId) Buzz.tap();
+    }
+  }, [state, profile]);
+
+  if (!profile) return (
+    <main className="min-h-screen-d flex items-center justify-center p-4">
+      <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+        <h1 className="font-display text-2xl">Joining {code}</h1>
+        <ProfileForm onSave={save} />
+      </div>
+    </main>
+  );
+
+  if (!state) return (
+    <main className="min-h-screen-d flex items-center justify-center">
+      <p className="opacity-60">{status === 'connecting' ? 'Connecting…' : 'Reconnecting…'}</p>
+    </main>
+  );
+
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/snakes/${code}` : '';
+
+  if (state.status === 'lobby') {
+    return (
+      <main className="min-h-screen-d flex items-center justify-center">
+        <Lobby
+          state={state as never}
+          meId={profile.playerId} shareUrl={shareUrl}
+          onAddBot={() => send({ type: 'addBot' })}
+          onStart={() => send({ type: 'start' })}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen-d flex flex-col items-center gap-4 p-4 pb-[calc(7rem+var(--safe-bottom))]">
-      <header className="w-full max-w-[640px] flex items-center justify-between">
-        <h1 className="font-display text-xl">Snakes & Ladders (local)</h1>
-        <button className="text-sm underline" onClick={reset}>New game</button>
-      </header>
+      {status !== 'open' && <div className="w-full max-w-[640px] text-sm bg-honey/30 px-3 py-2 rounded">Reconnecting…</div>}
+      {error && <div className="w-full max-w-[640px] text-sm bg-rust/30 px-3 py-2 rounded">{error}</div>}
       <PlayerPanel state={state} />
-      <SnakesBoard state={state} />
+      <ActivityLog state={state as never} />
+      <SnakesBoard state={state as unknown as SnakesGameState} />
       <div className="fixed inset-x-0 bottom-0 px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 bg-paper border-t border-edge flex items-center justify-between">
         <div className="text-base font-medium">
-          {state.status === 'finished'
-            ? `🏆 ${state.players.find((p) => p.id === state.winner)?.name} wins!`
-            : myTurn
-              ? state.dice ? `Rolled ${state.dice} — moving…` : 'Your turn — roll!'
-              : `Waiting on ${state.players.find((p) => p.id === state.currentTurn)?.name}`}
+          {(() => {
+            if (state.status === 'finished') return 'Game over';
+            if (!myTurn) return `Waiting on ${state.players.find((p) => p.id === state.currentTurn)?.name}`;
+            if (!state.dice) return 'Your turn — roll!';
+            return `Rolled ${state.dice} — moving…`;
+          })()}
         </div>
         <Dice
           value={state.dice}
           disabled={!myTurn || state.rolledThisTurn || state.status !== 'playing'}
-          onRoll={roll}
+          onRoll={() => send({ type: 'roll' })}
         />
       </div>
+      {state.status === 'finished' && (
+        <WinScreen
+          state={state as never}
+          meIsHost={state.players.find((p) => p.id === profile.playerId)?.isHost === true}
+          onPlayAgain={() => send({ type: 'playAgain' })}
+        />
+      )}
     </main>
   );
 }

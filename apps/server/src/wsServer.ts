@@ -129,14 +129,24 @@ export function attachWsServer(httpServer: Server, mgr = new RoomManager()) {
           case 'roll': {
             mgr.roll(c.code, c.playerId, rollDie());
             broadcast(c.code);
-            // If after rolling there's only a forced pass available, auto-pass after a beat
             const room = mgr.getRoom(c.code)!;
-            const moves = legalMoves(room.state, c.playerId);
-            if (moves.length === 1 && moves[0]!.kind === 'pass') {
-              setTimeout(() => { mgr.move(c.code, c.playerId, moves[0]!); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); }, 1500);
+            if (room.gameType === 'snakes') {
+              // S&L: always exactly one legal move after a roll. Auto-resolve.
+              setTimeout(() => {
+                mgr.move(c.code, c.playerId, { kind: 'auto' });
+                broadcast(c.code);
+                handleBotTurns(c.code);
+                armAfk(c.code);
+              }, 800);
             } else {
-              handleBotTurns(c.code);
-              armAfk(c.code);
+              // Ludo: forced-pass logic
+              const moves = legalMoves(room.state, c.playerId);
+              if (moves.length === 1 && moves[0]!.kind === 'pass') {
+                setTimeout(() => { mgr.move(c.code, c.playerId, moves[0]!); broadcast(c.code); handleBotTurns(c.code); armAfk(c.code); }, 1500);
+              } else {
+                handleBotTurns(c.code);
+                armAfk(c.code);
+              }
             }
             break;
           }
