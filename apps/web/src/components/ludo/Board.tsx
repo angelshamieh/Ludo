@@ -4,6 +4,7 @@ import {
   BOARD_TRACK, BOARD_HOME_SLOTS, BOARD_FINAL_RUN, CENTER, tokenCell,
 } from '@/lib/ludo/boardLayout';
 import { SAFE_ABSOLUTE_SQUARES } from '@ludo/game-logic-ludo';
+import { Pawn } from '@/components/visual/Pawn';
 
 const CELL = 36;     // base cell size in SVG units
 const SIZE = CELL * 15;
@@ -13,9 +14,6 @@ const quadrantFill: Record<Color, string> = {
   red: '#e8a3a3', green: '#a3c9a8', yellow: '#f0d896', blue: '#a3b8d6',
 };
 // Stronger tones for tokens — match the Tailwind theme tokens (rust/sage/honey/sky)
-const tokenFill: Record<Color, string> = {
-  red: '#c97a7a', green: '#7eaa83', yellow: '#d8b86a', blue: '#7d9ec5',
-};
 const tokenStroke: Record<Color, string> = {
   red: '#8c5252', green: '#557560', yellow: '#9c7e3b', blue: '#516f93',
 };
@@ -115,10 +113,7 @@ export function Board({ state, onTokenClick, hintTokenIds }: {
             )}
 
             {/* The token itself */}
-            <circle
-              cx={cx} cy={cy} r={CELL*0.36}
-              fill={tokenFill[t.color]} stroke={tokenStroke[t.color]} strokeWidth={2}
-            />
+            <Pawn color={t.color} cx={cx} cy={cy} size={CELL*0.7} />
 
             {/* Rotating sparkles around the token */}
             {isHinted && (
