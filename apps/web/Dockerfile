@@ -8,6 +8,7 @@ COPY tsconfig.base.json ./
 COPY packages/game-shared/package.json packages/game-shared/
 COPY packages/game-logic-ludo/package.json packages/game-logic-ludo/
 COPY packages/game-logic-snakes/package.json packages/game-logic-snakes/
+COPY packages/game-logic-tictactoe/package.json packages/game-logic-tictactoe/
 COPY apps/web/package.json apps/web/
 
 RUN pnpm install --filter @ludo/web... --frozen-lockfile=false
@@ -15,6 +16,7 @@ RUN pnpm install --filter @ludo/web... --frozen-lockfile=false
 COPY packages/game-shared packages/game-shared
 COPY packages/game-logic-ludo packages/game-logic-ludo
 COPY packages/game-logic-snakes packages/game-logic-snakes
+COPY packages/game-logic-tictactoe packages/game-logic-tictactoe
 COPY apps/web apps/web
 
 # Build-time public env vars (baked into the JS bundle by Next.js)
