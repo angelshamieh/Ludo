@@ -18,5 +18,8 @@ export function progressLabel(
     const sq = (tokens as Record<string, number>)[playerId] ?? 0;
     return `square ${sq}`;
   }
+  if (gameType === 'tictactoe') {
+    return '';
+  }
   return '';
 }
