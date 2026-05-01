@@ -13,6 +13,7 @@
   "dependencies": {
     "@ludo/game-logic-ludo": "workspace:*",
     "@ludo/game-logic-snakes": "workspace:*",
+    "@ludo/game-logic-tictactoe": "workspace:*",
     "@ludo/game-shared": "workspace:*",
     "next": "16.2.4",
     "react": "19.2.4",

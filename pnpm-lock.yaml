@@ -63,6 +63,9 @@ importers:
       '@ludo/game-logic-snakes':
         specifier: workspace:*
         version: link:../../packages/game-logic-snakes
+      '@ludo/game-logic-tictactoe':
+        specifier: workspace:*
+        version: link:../../packages/game-logic-tictactoe
       '@ludo/game-shared':
         specifier: workspace:*
         version: link:../../packages/game-shared
