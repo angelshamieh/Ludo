@@ -3,6 +3,7 @@ import type { GameState } from '@ludo/game-logic-snakes';
 import { LADDERS, SNAKES } from '@ludo/game-logic-snakes';
 import { squareToCell } from '@/lib/snakes/boardLayout';
 import { Pawn } from '@/components/visual/Pawn';
+import { SnakeArt } from '@/components/visual/SnakeArt';
 
 const CELL = 40;
 const SIZE = CELL * 10;
@@ -47,14 +48,13 @@ export function SnakesBoard({ state }: { state: GameState }) {
       {Object.entries(SNAKES).map(([head, tail]) => {
         const a = squareToCell(Number(head));
         const b = squareToCell(tail);
-        const mx = (a.col + b.col) / 2 * CELL + CELL/2 + 15;
-        const my = (a.row + b.row) / 2 * CELL + CELL/2;
         return (
-          <path key={`s-${head}`}
-            d={`M ${a.col*CELL + CELL/2} ${a.row*CELL + CELL/2}
-                Q ${mx} ${my},
-                  ${b.col*CELL + CELL/2} ${b.row*CELL + CELL/2}`}
-            fill="none" stroke="#a13030" strokeWidth={3} strokeLinecap="round"/>
+          <SnakeArt key={`s-${head}`}
+            x1={a.col*CELL + CELL/2} y1={a.row*CELL + CELL/2}
+            x2={b.col*CELL + CELL/2} y2={b.row*CELL + CELL/2}
+            length={Number(head) - tail}
+            idSuffix={`${head}-${tail}`}
+          />
         );
       })}
 
