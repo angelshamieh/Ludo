@@ -2,7 +2,7 @@
 import type { GameState, Color, Token } from '@ludo/game-logic-ludo';
 import {
   BOARD_TRACK, BOARD_HOME_SLOTS, BOARD_FINAL_RUN, CENTER, tokenCell,
-} from '@/lib/boardLayout';
+} from '@/lib/ludo/boardLayout';
 import { SAFE_ABSOLUTE_SQUARES } from '@ludo/game-logic-ludo';
 
 const CELL = 36;     // base cell size in SVG units

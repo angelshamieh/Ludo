@@ -4,7 +4,7 @@ import { useMemo, useEffect, useRef } from 'react';
 import { Buzz } from '@/lib/haptics';
 import { useLocalProfile } from '@/lib/useLocalProfile';
 import { useRoomConnection } from '@/lib/useRoomConnection';
-import { Board } from '@/components/Board';
+import { Board } from '@/components/ludo/Board';
 import { Dice } from '@/components/Dice';
 import { PlayerPanel } from '@/components/PlayerPanel';
 import { ActivityLog } from '@/components/ActivityLog';
