@@ -45,7 +45,7 @@ export class RoomManager {
     const now = this.now();
     const state: GameState = {
       code,
-      gameType: 'ludo',
+      gameType: gameType as 'ludo',
       status: 'lobby',
       players: [host],
       turnOrder: [],

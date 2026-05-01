@@ -43,3 +43,21 @@ describe('ws integration', () => {
     a.close(); b.close();
   });
 });
+
+describe('ws integration — snakes', () => {
+  it('snakes room: gameType=snakes; host joins; lobby state broadcasts', async () => {
+    const code = mgr.createRoom({
+      hostId: 'host', hostName: 'Host', hostAvatar: '🐱', gameType: 'snakes',
+    });
+
+    const a = ws();
+    await new Promise((r) => a.once('open', r));
+    a.send(JSON.stringify({ type: 'join', code, playerId: 'host', name: 'Host', avatar: '🐱' }));
+
+    const stateMsg = await wait(a, (m) => m.type === 'state');
+    expect((stateMsg.state as { gameType: string }).gameType).toBe('snakes');
+    expect((stateMsg.state as { status: string }).status).toBe('lobby');
+
+    a.close();
+  });
+});

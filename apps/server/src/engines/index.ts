@@ -1,11 +1,12 @@
 import type { GameType } from '@ludo/game-shared';
 import type { GameEngine } from './types';
 import { ludoEngine } from './ludo';
+import { snakesEngine } from './snakes';
 
 const ENGINES: Record<GameType, GameEngine> = {
   ludo: ludoEngine,
-  // snakes: snakesEngine — registered in Phase 6
-} as Record<GameType, GameEngine>;
+  snakes: snakesEngine,
+};
 
 export function getEngine(gameType: GameType): GameEngine {
   const e = ENGINES[gameType];
