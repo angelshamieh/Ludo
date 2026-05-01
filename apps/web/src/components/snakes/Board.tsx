@@ -2,13 +2,10 @@
 import type { GameState } from '@ludo/game-logic-snakes';
 import { LADDERS, SNAKES } from '@ludo/game-logic-snakes';
 import { squareToCell } from '@/lib/snakes/boardLayout';
+import { Pawn } from '@/components/visual/Pawn';
 
 const CELL = 40;
 const SIZE = CELL * 10;
-
-const colorFill: Record<string, string> = {
-  red: '#c97a7a', green: '#7eaa83', yellow: '#d8b86a', blue: '#7d9ec5',
-};
 
 export function SnakesBoard({ state }: { state: GameState }) {
   return (
@@ -65,17 +62,18 @@ export function SnakesBoard({ state }: { state: GameState }) {
         const sq = state.tokens[p.id]!;
         if (sq === 0) {
           return (
-            <circle key={p.id}
-              cx={5 + i*15} cy={SIZE - 8}
-              r={5} fill={colorFill[p.color]!} stroke="#3a2e1f" strokeWidth={1}/>
+            <g key={p.id}>
+              <Pawn color={p.color} cx={5 + i*15} cy={SIZE - 8} size={10} />
+            </g>
           );
         }
         const c = squareToCell(sq);
         const cx = c.col*CELL + CELL/2 + (i - state.players.length/2) * 6;
         const cy = c.row*CELL + CELL/2 + 8;
         return (
-          <circle key={p.id} cx={cx} cy={cy} r={6}
-            fill={colorFill[p.color]!} stroke="#3a2e1f" strokeWidth={1.5}/>
+          <g key={p.id}>
+            <Pawn color={p.color} cx={cx} cy={cy} size={CELL*0.6} />
+          </g>
         );
       })}
     </svg>
