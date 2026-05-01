@@ -15,7 +15,7 @@ export default function SnakesPage() {
         <h1 className="font-display text-xl">Snakes & Ladders (local)</h1>
         <button className="text-sm underline" onClick={reset}>New game</button>
       </header>
-      <PlayerPanel state={state as never} />
+      <PlayerPanel state={state} />
       <SnakesBoard state={state} />
       <div className="fixed inset-x-0 bottom-0 px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 bg-paper border-t border-edge flex items-center justify-between">
         <div className="text-base font-medium">

@@ -1,17 +1,15 @@
 'use client';
-import type { GameState } from '@ludo/game-logic-ludo';
+import type { BaseGameState } from '@ludo/game-shared';
+import { progressLabel } from '@/lib/progressLabel';
 
 const colorBg: Record<string, string> = {
   red: 'bg-rust', green: 'bg-sage', yellow: 'bg-honey', blue: 'bg-sky',
 };
 
-export function PlayerPanel({ state }: { state: GameState }) {
+export function PlayerPanel({ state }: { state: BaseGameState & { tokens: unknown } }) {
   return (
     <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-[640px]">
       {state.players.map((p) => {
-        const finished = state.tokens[p.id]!.filter(
-          (t) => t.position.kind === 'path' && t.position.index === 56,
-        ).length;
         const turn = state.currentTurn === p.id;
         return (
           <li
@@ -24,7 +22,7 @@ export function PlayerPanel({ state }: { state: GameState }) {
             </span>
             <div className="flex-1 min-w-0">
               <div className="font-medium truncate">{p.name}{p.isBot && ' 🤖'}</div>
-              <div className="text-xs opacity-70">{finished}/4 finished</div>
+              <div className="text-xs opacity-70">{progressLabel(state.gameType, state.tokens, p.id)}</div>
             </div>
             {!p.connected && <span title="disconnected">📡</span>}
           </li>
